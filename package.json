@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "chardet": "^2.1.1",
+    "fast-xml-parser": "^5.7.1",
+    "iconv-lite": "^0.7.2",
+    "twig": "^3.0.0"
+  }
+}
