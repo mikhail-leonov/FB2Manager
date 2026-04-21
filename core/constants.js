@@ -14,6 +14,8 @@ const BACKUP_DIR  = path.join(ROOT, "backup");
 const FILES_DIR   = path.join(ROOT, "files");
 const UPLOAD_DIR  = path.join(ROOT, "upload");
 const VIEWS_DIR   = path.join(ROOT, "views");
+const LOG_DIR     = path.join(ROOT, "logs");
+
 
 // FILES
 const DB_FILE            = path.join(DB_DIR, "books.db");
@@ -21,6 +23,7 @@ const SCHEMA_FILE        = path.join(SQL_DIR, "db.sql");
 const GENRES_SEED_FILE   = path.join(SQL_DIR, "genres.sql");
 const BOOKS_SEED_FILE    = path.join(SQL_DIR, "books.sql");
 const AUTHORS_SEED_FILE  = path.join(SQL_DIR, "authors.sql");
+const LOG_FILE           = path.join(LOG_DIR, "logs.log");
 
 // TABLES
 const TABLE_BOOKS        = "Books";
@@ -88,12 +91,14 @@ module.exports = {
     FILES_DIR,
     UPLOAD_DIR,
     VIEWS_DIR,
+    LOG_DIR,
 
     DB_FILE,
     SCHEMA_FILE,
     GENRES_SEED_FILE,
     BOOKS_SEED_FILE,
     AUTHORS_SEED_FILE,
+    LOG_FILE,
 
     CONTENT_TYPE_JSON, 
     CONTENT_TYPE_JS, 

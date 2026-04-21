@@ -30,10 +30,17 @@ function match(url, route) {
 }
 
 async function router(req, res) {
-    const url = new URL(req.url, `http://${req.headers.host}`).pathname;
+    let url = new URL(req.url, `http://${req.headers.host}`).pathname;
+    url = url.replace(/\/+$/, "") || "/";
 
     if (url.startsWith(JS_PREFIX)) {
-        const filePath = path.join(__dirname, "..", url);
+
+        const base = path.join(__dirname, "..");
+        const filePath = path.normalize(path.join(base, url));
+        if (!filePath.startsWith(base)) {
+            res.writeHead(403);
+            return res.end("Forbidden");
+        }
         if (fs.existsSync(filePath)) {
             res.writeHead(200, { "Content-Type": CONTENT_TYPE_JS });
             return res.end(fs.readFileSync(filePath));
@@ -43,8 +50,11 @@ async function router(req, res) {
     }
     if (url.startsWith(FILES_PREFIX)) {
         const file = url.split(FILES_PREFIX)[1];
-        const filePath = path.join(FILES_DIR, file + ".fb2");
-    
+        const filePath = path.normalize(path.join(FILES_DIR, file + ".fb2"));
+        if (!filePath.startsWith(FILES_DIR)) {
+            res.writeHead(403);
+            return res.end("Forbidden");
+        }
         if (fs.existsSync(filePath)) {
             res.writeHead(200, { "Content-Type": "application/xml" });
             return res.end(fs.readFileSync(filePath));
@@ -78,13 +88,19 @@ async function router(req, res) {
         ["GET", "/db-clean",  		DbController.clean],    
     ];
 
-    for (const [method, path, handler] of routes) {
-        if (req.method !== method) continue;
-
-        const params = match(url, path);
+    let pathMatched = false;
+    for (const [method, route, handler] of routes) {
+        const params = match(url, route);
         if (params) {
-            return handler(req, res, params);
+            pathMatched = true;
+            if (req.method === method) {
+                return handler(req, res, params);
+            }
         }
+    }
+    if (pathMatched) {
+        res.writeHead(405);
+        return res.end("Method Not Allowed");
     }
 
     res.writeHead(404);

@@ -10,6 +10,7 @@ const {
     BACKUP_DIR,
     FILES_DIR,
     UPLOAD_DIR,
+    LOG_DIR,
     SCHEMA_FILE,
     GENRES_SEED_FILE,
     BOOKS_SEED_FILE,
@@ -17,7 +18,7 @@ const {
 } = require("./constants");
 
 function ensureFolders() {
-    [SQL_DIR, UPLOAD_DIR, DB_DIR, BACKUP_DIR, FILES_DIR].forEach(dir => {
+    [SQL_DIR, LOG_DIR, UPLOAD_DIR, DB_DIR, BACKUP_DIR, FILES_DIR].forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
             console.log(`Created folder: ${dir}`);

@@ -18,9 +18,8 @@ async function respond(req, res, title, data, isTable = false, hiddenColumns = [
         return res.end(JSON.stringify(data, null, 2));
     }
 
-    let content = (Array.isArray(data) && isTable)
-        ? renderTable(data, hiddenColumns)
-        : renderJson(data);
+    const isTableData = Array.isArray(data) && data.length && typeof data[0] === "object";
+    let content = (isTableData && isTable) ? renderTable(data, hiddenColumns) : renderJson(data);
 
     const html = await render("page.twig", { title, content });
 

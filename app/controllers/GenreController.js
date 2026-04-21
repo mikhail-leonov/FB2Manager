@@ -18,14 +18,14 @@ class GenreController {
     static async show(req, res, params) {
         const data = GenreModel.getById(params.id);
         if (!data) { return error(res, "Genre not found", 404); }
-        return respond(req, res, `Genre: ${params.id}`, data, GENRE_COLUMNS.hidden);
+        return respond(req, res, `Genre: ${params.id}`, data, false, GENRE_COLUMNS.hidden);
     }
     static async books(req, res, params) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
         const data = BookGenreModel.getBooks(params.id, BookModel, page, limit);
-        if (!data) { return error(res, "Author not found", 404); }
+        if (!data) { return error(res, "Genre not found", 404); }
         return respond(req, res, `Genre: ${params.id}`, data, true, GENRE_COLUMNS.hidden);
     }
 }

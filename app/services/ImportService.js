@@ -4,7 +4,7 @@ const path = require("path");
 
 const chardet = require("chardet");
 const iconv = require("iconv-lite");
-const { XMLParser } = require("fast-xml-parser");
+const { XMLParser, XMLBuilder } = require("fast-xml-parser");
 
 const BookModel = require("../models/BookModel");
 
@@ -18,6 +18,8 @@ const GenreModel = require("../models/GenreModel");
 const BookGenreModel = require("../models/BookGenreModel");
 
 const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
+
+const { LOG_FILE } = require("../../core/constants");
 
 /**
  * =========================
@@ -60,15 +62,21 @@ function hashFile(buffer) {
  */
 function readFileSmart(filePath) {
     const buffer = fs.readFileSync(filePath);
-
     let encoding = chardet.detect(buffer) || "utf-8";
     encoding = encoding.toLowerCase();
-
     if (encoding.includes("windows-1251") || encoding.includes("cp1251")) {
         encoding = "win1251";
     }
-
     return iconv.decode(buffer, encoding);
+}
+
+function detectEncoding(buffer) {
+    let encoding = chardet.detect(buffer) || "utf-8";
+    encoding = encoding.toLowerCase();
+    if (encoding.includes("windows-1251") || encoding.includes("cp1251")) {
+        encoding = "win1251";
+    }
+    return encoding;
 }
 
 /**
@@ -151,10 +159,7 @@ function extractSeries(json) {
  * =========================
  */
 function extractTitle(json, fallback) {
-    return (
-        json?.FictionBook?.description?.["title-info"]?.["book-title"]
-        || fallback
-    );
+    return ( json?.FictionBook?.description?.["title-info"]?.["book-title"] || fallback );
 }
 
 /**
@@ -208,7 +213,8 @@ function shouldSkipImport({ authors, language, genres }) {
  */
 function parseBook(filePath) {
     const buffer = fs.readFileSync(filePath);
-    const xml = readFileSmart(filePath);
+    const encoding = detectEncoding(buffer);
+    const xml = iconv.decode(buffer, encoding);
 
     let json;
 
@@ -243,27 +249,52 @@ function parseBook(filePath) {
         series
     };
 }
-
 /**
  * =========================
  * IMPORT MAIN
  * =========================
  */
+function Log(msg) {
+    fs.appendFileSync(LOG_FILE, msg + "\n");
+    console.log(msg);
+}
+
+function removeBinaryNodes(fb2Content) {
+    const localParser = new XMLParser({ ignoreAttributes: false });
+    const builder = new XMLBuilder({
+        ignoreAttributes: false,
+        format: true
+    });
+    const json = localParser.parse(fb2Content);
+    function removeBinary(obj) {
+        if (!obj || typeof obj !== "object") return;
+        delete obj.binary; // <-- THIS is the key line
+        for (const key in obj) {
+            removeBinary(obj[key]);
+        }
+    }
+    removeBinary(json);
+    return builder.build(json);
+}
+
 function importBooks() {
     const files = getAllFiles();
 
     let imported = 0;
     let skipped = 0;
     let deleted = 0;
+    let index = 0;
 
     const existing = new Set(
-        BookModel.getAll().map(b => b.hash)
+        BookModel.getAllHashes().map(b => b.hash)
     );
 
-    console.log(`Found ${files.length} files for importing...`);
+    Log(`Found ${files.length} files for importing...`);
 
+   
     for (const file of files) {
         try {
+            index++;
             const parsed = parseBook(file);
             const book = parsed.book;
 
@@ -273,7 +304,7 @@ function importBooks() {
                 fs.unlinkSync(file);
                 deleted++;
 
-                console.log(`SKIPPED duplicate: ${book.title}`);
+                Log(`${index}.SKIPPED duplicate: ${book.title}`);
                 continue;
             }
 
@@ -287,7 +318,7 @@ function importBooks() {
             if (reason) {
                 skipped++;
 
-                console.log(`SKIPPED (${reason}): ${book.title}`);
+                Log(`${index}.SKIPPED (${reason}): ${book.title}`);
                 continue;
             }
 
@@ -296,13 +327,13 @@ function importBooks() {
             existing.add(book.hash);
             imported++;
 
-            console.log(`IMPORTED: ${book.title}`);
+            Log(`${index}.IMPORTED: ${book.title}`);
 
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {
                     const author = AuthorModel.getOrCreate( a.firstname, a.middlename, a.lastname );
                     BookAuthorModel.link(book.book_id, author.author_id);
-                    console.log( ` - AUTHOR: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}` );
+                    Log( ` - AUTHOR: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}` );
                 }
             }
 
@@ -310,7 +341,7 @@ function importBooks() {
                 for (const g of parsed.genres) {
                     const genre = GenreModel.getOrCreate(g);
                     if (genre) { BookGenreModel.link(book.book_id, genre.genre_id); }
-                    console.log(` - GENRE: ${g}`);
+                    Log(` - GENRE: ${g}`);
                 }
             }
             
@@ -318,31 +349,33 @@ function importBooks() {
                for (const s of parsed.series) {
                     const serie = SerieModel.getOrCreate(s.title);
                     BookSerieModel.link( book.book_id, serie.serie_id, s.number );
-                    console.log(` - SERIES: ${s.title} (#${s.number || "?"})` );
+                    Log(` - SERIES: ${s.title} (#${s.number || "?"})` );
                 }
             }
 
             const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
-
             try {
-                fs.copyFileSync(file, dest);
+		// 
+		const buffer = fs.readFileSync(file);
+	    	const encoding = detectEncoding(buffer);
+    		const xml = iconv.decode(buffer, encoding);
+    		const cleanedXml = removeBinaryNodes(xml);
+    		fs.writeFileSync(dest, cleanedXml, "utf8"); // always safe
             } catch (e) {
-                console.error(`COPY FAILED: ${file} -> ${dest}`, e.message);
+                Log(`${index}.COPY FAILED: ${file} -> ${dest} ${e.message}`);
             }
 
             fs.unlinkSync(file);
             deleted++;
 
         } catch (e) {
-            console.error(`FAILED: ${file} -> ${e.message}`);
+            Log(`FAILED: ${file} -> ${e.message}`);
         }
     }
 
     removeEmptyDirs();
 
-    console.log(
-        `DONE: \nimported=${imported}, \nskipped=${skipped}, \ndeleted=${deleted}`
-    );
+    Log(`DONE: \nimported=${imported}, \nskipped=${skipped}, \ndeleted=${deleted}`);
 
     return { imported, skipped, deleted };
 }

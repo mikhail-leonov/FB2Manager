@@ -74,6 +74,10 @@ class BookModel {
     static delete(id) {
         return db.prepare("DELETE FROM Books WHERE book_id = ?").run(id);
     }
+
+    static getAllHashes() {
+        return db.prepare("SELECT hash FROM Books").all();
+    }
 }
 
 module.exports = BookModel;

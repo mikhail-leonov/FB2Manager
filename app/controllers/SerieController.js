@@ -18,14 +18,14 @@ class SerieController {
     static async show(req, res, params) {
         const data = SerieModel.getById(params.id);
         if (!data) { return error(res, "Series not found", 404); }
-        return respond(req, res, `Series: ${params.id}`, data, SERIE_COLUMNS.hidden);
+        return respond(req, res, `Series: ${params.id}`, data, false, SERIE_COLUMNS.hidden);
     }
     static async books(req, res, params) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
         const data = BookSerieModel.getBooks(params.id, BookModel, page, limit);
-        if (!data) { return error(res, "Author not found", 404); }
+        if (!data) { return error(res, "Serie not found", 404); }
         return respond(req, res, `Serie: ${params.id}`, data, true, SERIE_COLUMNS.hidden);
     }
 }
