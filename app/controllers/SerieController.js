@@ -10,7 +10,9 @@ const { SERIE_COLUMNS } = require("../services/tableColumns");
 class SerieController {
 
     static async index(req, res) {
-        const data = SerieModel.getAll();
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const data = SerieModel.getAll(page);
         return respond(req, res, "Series", data, true, SERIE_COLUMNS.hidden);
     }
     static async show(req, res, params) {
@@ -19,7 +21,10 @@ class SerieController {
         return respond(req, res, `Series: ${params.id}`, data, SERIE_COLUMNS.hidden);
     }
     static async books(req, res, params) {
-        const data = BookSerieModel.getBooks(params.id, BookModel);
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const data = BookSerieModel.getBooks(params.id, BookModel, page, limit);
         if (!data) { return error(res, "Author not found", 404); }
         return respond(req, res, `Serie: ${params.id}`, data, true, SERIE_COLUMNS.hidden);
     }

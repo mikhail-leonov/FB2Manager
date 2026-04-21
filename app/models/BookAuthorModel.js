@@ -1,8 +1,9 @@
 const db = require("../../core/db");
 
 class BookAuthorModel {
-    static getBooks(author_id, bookModel) {
-        const rows = db.prepare(`SELECT book_id FROM BookAuthors WHERE author_id = ?`).all(author_id);
+    static getBooks(author_id, bookModel, page = 1, limit = 20) {
+        const offset = (page - 1) * limit;
+        const rows = db.prepare(`SELECT book_id FROM BookAuthors WHERE author_id = ? ORDER BY rowid DESC LIMIT ? OFFSET ?`).all(author_id, limit, offset);
         const ids = rows.map(r => r.book_id);
         return bookModel.getByIds(ids);
     }

@@ -10,7 +10,9 @@ const { GENRE_COLUMNS } = require("../services/tableColumns");
 class GenreController {
 
     static async index(req, res) {
-        const data = GenreModel.getAll();
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const data = GenreModel.getAll(page);
         return respond(req, res, "Genres", data, true, GENRE_COLUMNS.hidden);
     }
     static async show(req, res, params) {
@@ -19,7 +21,10 @@ class GenreController {
         return respond(req, res, `Genre: ${params.id}`, data, GENRE_COLUMNS.hidden);
     }
     static async books(req, res, params) {
-        const data = BookGenreModel.getBooks(params.id, BookModel);
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const data = BookGenreModel.getBooks(params.id, BookModel, page, limit);
         if (!data) { return error(res, "Author not found", 404); }
         return respond(req, res, `Genre: ${params.id}`, data, true, GENRE_COLUMNS.hidden);
     }

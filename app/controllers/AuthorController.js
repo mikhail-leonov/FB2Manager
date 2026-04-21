@@ -10,7 +10,9 @@ const { AUTHOR_COLUMNS } = require("../services/tableColumns");
 class AuthorController {
 
     static async index(req, res) {
-        const data = AuthorModel.getAll();
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const data = AuthorModel.getAll(page);
         return respond(req, res, "Authors", data, true, AUTHOR_COLUMNS.hidden);
     }
     static async show(req, res, params) {
@@ -19,7 +21,10 @@ class AuthorController {
         return respond(req, res, `Author: ${params.id}`, data, false, AUTHOR_COLUMNS.hidden);
     }
     static async books(req, res, params) {
-        const data = BookAuthorModel.getBooks(params.id, BookModel);
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const data = BookAuthorModel.getBooks(params.id, BookModel, page, limit);
         if (!data) { return error(res, "Author not found", 404); }
         return respond(req, res, `Author: ${params.id}`, data, true, AUTHOR_COLUMNS.hidden);
     }

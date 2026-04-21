@@ -8,7 +8,9 @@ const { BOOK_COLUMNS } = require("../services/tableColumns");
 class BookController {
 
     static async index(req, res) {
-        const data = BookModel.getAll();
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const data = BookModel.getAll(page);
         return respond(req, res, "Books", data, true, BOOK_COLUMNS.hidden );
     }
     static async show(req, res, params) {

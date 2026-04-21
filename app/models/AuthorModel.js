@@ -2,8 +2,9 @@ const db = require("../../core/db");
 const crypto = require("crypto");
 
 class AuthorModel {
-    static getAll() {
-        return db.prepare("SELECT * FROM Authors").all();
+    static getAll(page = 1, limit = 20) {
+        const offset = (page - 1) * limit;
+        return db.prepare("SELECT * FROM Authors ORDER BY rowid DESC LIMIT ? OFFSET ?").all(limit, offset);
     }
 
     static getById(id) {

@@ -3,8 +3,9 @@ const crypto = require("crypto");
 
 class GenreModel {
 
-    static getAll() {
-        return db.prepare("SELECT * FROM Genres").all();
+    static getAll(page = 1, limit = 20) {
+        const offset = (page - 1) * limit;
+        return db.prepare("SELECT * FROM Genres ORDER BY rowid DESC LIMIT ? OFFSET ?").all(limit, offset);
     }
 
     static getById(id) {

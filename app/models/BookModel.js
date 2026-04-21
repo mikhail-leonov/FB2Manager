@@ -46,8 +46,9 @@ class BookModel {
         });
     }
     
-    static getAll() {
-        const books = db.prepare("SELECT book_id FROM Books").all();
+    static getAll(page = 1, limit = 20) {
+        const offset = (page - 1) * limit;
+        const books = db.prepare("SELECT book_id FROM Books ORDER BY rowid DESC LIMIT ? OFFSET ?").all(limit, offset);
         const ids = books.map(r => r.book_id);
         return this.getByIds(ids);
     }
