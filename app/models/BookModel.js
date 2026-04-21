@@ -4,7 +4,7 @@ const { makeBookLink, makeAuthorLink, makeGenreLink, makeSeriesLink, makeFileLin
 
 class BookModel {
 
-    populateBooks(books) {
+    static populateBooks(books) {
         if (!books || books.length === 0) return [];
     
         const getAuthors = db.prepare(`
@@ -46,29 +46,33 @@ class BookModel {
         });
     }
     
-    getAll() {
-        const books = db.prepare("SELECT book_id, title, annotation, hash FROM Books").all();
-        return this.populateBooks(books);
+    static getAll() {
+        const books = db.prepare("SELECT book_id FROM Books").all();
+        const ids = books.map(r => r.book_id);
+        return this.getByIds(ids);
     }
 
-    getById(id) {
-        let result = [];
-        const book = db.prepare("SELECT book_id, title, annotation, hash FROM Books WHERE book_id = ?").get(id);
-        if (book) {
-            const books = this.populateBooks([book]);
-            result = books[0];
-        }
-        return result;
+    static getById(id) {
+        const result = this.getByIds([id]);
+        return result.length ? result[0] : null;
     }
 
-    create(book) {
+    static getByIds(ids) {
+        if (!Array.isArray(ids) || ids.length === 0) { return []; }
+        const param = ids.map(() => "?").join(",");
+        const query = `SELECT * FROM Books WHERE book_id IN (${param})`;
+        const rows = db.prepare(query).all(...ids);
+        return this.populateBooks(rows);
+    }
+
+    static create(book) {
         const stmt = db.prepare(`INSERT INTO Books ( book_id,title,language,annotation,publication_date,hash ) VALUES (?, ?, ?, ?, ?, ?)`);
         return stmt.run( book.book_id, book.title, book.language, book.annotation, book.publication_date, book.hash );
     }
 
-    delete(id) {
+    static delete(id) {
         return db.prepare("DELETE FROM Books WHERE book_id = ?").run(id);
     }
 }
 
-module.exports = new BookModel();
+module.exports = BookModel;

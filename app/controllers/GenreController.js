@@ -1,5 +1,8 @@
-const { render } = require("../../core/view");
 const GenreModel = require("../models/GenreModel");
+const BookGenreModel = require("../models/BookGenreModel");
+const BookModel = require("../models/BookModel");
+
+const { render } = require("../../core/view");
 const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
 
@@ -18,6 +21,13 @@ class GenreController {
         }
 
         return respond(req, res, `Genre: ${params.id}`, data);
+    }
+    static async books(req, res, params) {
+        const data = BookGenreModel.getBooks(params.id, BookModel);
+        if (!data) {
+            return error(res, "Author not found", 404);
+        }
+        return respond(req, res, `Author: ${params.id}`, data, false);
     }
 }
 

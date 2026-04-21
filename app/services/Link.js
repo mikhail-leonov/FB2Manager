@@ -8,7 +8,7 @@ function makeFileLink(link) {
 
 function makeAuthorLink(link) {
     const name = `${link.firstname || ""} ${link.lastname || ""}`.trim();
-    return `<a href="/author/${link.author_id}">${name}</a>`;
+    return `<a href="/author/${link.author_id}/books">${name}</a>`;
 }
 
 function makeGenreLink(link) {

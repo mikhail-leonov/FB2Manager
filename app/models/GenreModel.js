@@ -3,24 +3,24 @@ const crypto = require("crypto");
 
 class GenreModel {
 
-    getAll() {
+    static getAll() {
         return db.prepare("SELECT * FROM Genres").all();
     }
 
-    getById(id) {
+    static getById(id) {
         return db.prepare("SELECT * FROM Genres WHERE genre_id = ?").get(id);
     }
 
-    findByTitle(title) {
+    static findByTitle(title) {
         return db.prepare("SELECT * FROM Genres WHERE title = ?").get(title);
     }
 
-    create(genre) {
+    static create(genre) {
         const stmt = db.prepare(`INSERT INTO Genres (genre_id, title) VALUES (?, ?)`);
         return stmt.run( genre.genre_id, genre.title );
     }
 
-    getOrCreate(title) {
+    static getOrCreate(title) {
         if (!title) { return null; }
         const existing = this.findByTitle(title);
         if (existing) { return existing; }
@@ -29,9 +29,9 @@ class GenreModel {
         return genre;
     }
 
-    delete(id) {
+    static delete(id) {
         return db.prepare("DELETE FROM Genres WHERE genre_id = ?").run(id);
     }
 }
 
-module.exports = new GenreModel();
+module.exports = GenreModel;

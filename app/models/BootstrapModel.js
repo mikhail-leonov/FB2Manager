@@ -5,7 +5,7 @@ const { ALL_TABLES } = require("../../core/constants");
 
 class BootstrapModel {
 
-    hasFullSchema() {
+    static hasFullSchema() {
         const rows = db.prepare(
             `SELECT name FROM sqlite_master WHERE type='table'`
         ).all();
@@ -14,17 +14,17 @@ class BootstrapModel {
         return ALL_TABLES.every(t => existing.has(t));
     }
 
-    hasGenres() {
+    static hasGenres() {
         return db.prepare(`SELECT COUNT(*) AS c FROM Genres`).get().c > 0;
     }
 
-    hasAuthors() {
+    static hasAuthors() {
         return db.prepare(`SELECT COUNT(*) AS c FROM Authors`).get().c > 0;
     }
 
-    hasBooks() {
+    static hasBooks() {
         return db.prepare(`SELECT COUNT(*) AS c FROM Books`).get().c > 0;
     }
 }
 
-module.exports = new BootstrapModel();
+module.exports = BootstrapModel;

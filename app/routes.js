@@ -54,21 +54,22 @@ async function router(req, res) {
     }
 
     const routes = [
-        ["GET", "/",          HomeController.index],
-        ["GET", "/books",     BookController.index],
-	["GET", "/import",    ImportController.run],
-        ["GET", "/book/:id",  BookController.show],
-        ["GET", "/author/:id",AuthorController.show],
-        ["GET", "/genre/:id", GenreController.show],
-        ["GET", "/serie/:id", SerieController.show],
-        ["GET", "/authors",   AuthorController.index],
-        ["GET", "/genres",    GenreController.index],
-        ["GET", "/series",    SerieController.index],
-        ["GET", "/db",        DbController.dump],
-        ["GET", "/db/:name",  DbController.table],
-        ["GET", "/db-stats",  DbController.stats],
-        ["GET", "/db-schema", DbController.schema],
-        ["GET", "/db-clean",  DbController.clean],    
+        ["GET", "/",          		HomeController.index],
+        ["GET", "/books",     		BookController.index],
+	["GET", "/import",    		ImportController.run],
+        ["GET", "/book/:id",  		BookController.show],
+        ["GET", "/author/:id",		AuthorController.show],
+        ["GET", "/author/:id/books", 	AuthorController.books],
+        ["GET", "/genre/:id", 		GenreController.show],
+        ["GET", "/serie/:id", 		SerieController.show],
+        ["GET", "/authors",   		AuthorController.index],
+        ["GET", "/genres",    		GenreController.index],
+        ["GET", "/series",    		SerieController.index],
+        ["GET", "/db",        		DbController.dump],
+        ["GET", "/db/:name",  		DbController.table],
+        ["GET", "/db-stats",  		DbController.stats],
+        ["GET", "/db-schema", 		DbController.schema],
+        ["GET", "/db-clean",  		DbController.clean],    
     ];
 
     for (const [method, path, handler] of routes) {
