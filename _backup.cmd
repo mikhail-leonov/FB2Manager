@@ -24,7 +24,7 @@ cd /d "%~dp0"
 git config --global user.email "mikecommon@gmail.com"
 git config --global user.name "Mihail Leonov"
 
-git add *.cmd *.json server.js js\* sql\* app\* views\* core\*
+git add *.md *.cmd *.json server.js js\* sql\* app\* views\* core\*
 
 
 
