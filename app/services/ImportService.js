@@ -29,6 +29,8 @@ const { LOG_FILE } = require("../../core/constants");
 const {
     IMPORT_ALLOWED_LANGUAGES,
     IMPORT_BLOCKED_LANGUAGES,
+    IMPORT_BLOCKED_ENCODINGS,
+    IMPORT_ALLOWED_ENCODINGS,
     IMPORT_BLOCKED_AUTHORS,
     IMPORT_ALLOWED_GENRES,
     IMPORT_BLOCKED_GENRES,
@@ -139,11 +141,7 @@ function extractSeries(json) {
     try {
         const info = json?.FictionBook?.description?.["title-info"];
         if (!info?.sequence) return [];
-
-        const seq = Array.isArray(info.sequence)
-            ? info.sequence
-            : [info.sequence];
-
+        const seq = Array.isArray(info.sequence) ? info.sequence : [info.sequence];
         return seq.map(s => ({
             title: s["@_name"] || "Unknown Series",
             number: s["@_number"] ? Number(s["@_number"]) : null
@@ -167,13 +165,20 @@ function extractTitle(json, fallback) {
  * FILTER ENGINE
  * =========================
  */
-function shouldSkipImport({ authors, language, genres }) {
+function shouldSkipImport({ authors, language, genres, encoding }) {
 
     if (IMPORT_ALLOWED_LANGUAGES && !IMPORT_ALLOWED_LANGUAGES.includes(language)) {
         return `language not allowed: ${language}`;
     }
     if (IMPORT_BLOCKED_LANGUAGES?.includes(language)) {
         return `language blocked: ${language}`;
+    }
+
+    if (IMPORT_ALLOWED_ENCODINGS?.length && !IMPORT_ALLOWED_ENCODINGS.includes(encoding)) {
+        return `encoding not allowed: ${encoding}`;
+    }
+    if (IMPORT_BLOCKED_ENCODINGS?.includes(encoding)) {
+        return `encoding blocked: ${encoding}`;
     }
 
     const authorNames = authors.map(a =>
@@ -224,9 +229,9 @@ function parseBook(filePath) {
         throw new Error("XML parse failed");
     }
 
-    const authors = extractAuthors(json);
+    let authors = extractAuthors(json);
     if (!authors.length) {
-        throw new Error("No authors in FB2");
+         authors = [AuthorModel.getById('000000000000000000000000')];
     }
 
     const language = extractLanguage(json);
@@ -246,7 +251,8 @@ function parseBook(filePath) {
         },
         authors,
         genres,
-        series
+        series,
+        encoding
     };
 }
 /**
@@ -307,7 +313,7 @@ function importBooks() {
                 fs.unlinkSync(file);
                 deleted++;
 
-                Log(`${index}/${total}.SKIPPED duplicate: ${book.title} : (${Date.now() - bookStart}ms)`);
+                Log(`${index}/${total}.SKIPPED duplicate: ${book.title} : ${file} : (${Date.now() - bookStart}ms)`);
                 continue;
             }
 
@@ -315,13 +321,14 @@ function importBooks() {
             const reason = shouldSkipImport({
                 authors: parsed.authors,
                 language: book.language,
-                genres: parsed.genres
+                genres: parsed.genres, 
+                encoding: parsed.encoding 
             });
 
             if (reason) {
                 skipped++;
 
-                Log(`${index}/${total}.SKIPPED (${reason}): ${book.title} : (${Date.now() - bookStart}ms)`);
+                Log(`${index}/${total}.SKIPPED (${reason}): ${book.title} : ${file} : (${Date.now() - bookStart}ms)`);
                 continue;
             }
 
@@ -330,7 +337,7 @@ function importBooks() {
             existing.add(book.hash);
             imported++;
 
-            Log(`${index}/${total}.IMPORTED: ${book.title} : (${Date.now() - bookStart}ms)`);
+            Log(`${index}/${total}.IMPORTED: ${book.title} : ${file} : (${Date.now() - bookStart}ms)`);
 
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {

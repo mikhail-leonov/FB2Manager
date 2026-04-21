@@ -1,7 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const { FILES_DIR, FILES_PREFIX, JS_PREFIX, CONTENT_TYPE_JS } = require("../core/constants");
+const { FILES_DIR, FILES_PREFIX, JS_PREFIX, CONTENT_TYPE_JS, CONTENT_TYPE_HTML } = require("../core/constants");
+const { render } = require("../core/view");
+const { renderFb2ToHtml } = require("./services/Fb2Renderer");
 
 const HomeController = require("./controllers/HomeController");
 const BookController = require("./controllers/BookController");
@@ -15,17 +17,10 @@ function match(url, route) {
     const params = {};
     const u = url.split("/");
     const r = route.split("/");
-
     if (u.length !== r.length) return null;
-
     for (let i = 0; i < u.length; i++) {
-        if (r[i].startsWith(":")) {
-            params[r[i].slice(1)] = u[i];
-        } else if (u[i] !== r[i]) {
-            return null;
-        }
+        if (r[i].startsWith(":")) { params[r[i].slice(1)] = u[i]; } else if (u[i] !== r[i]) { return null; }
     }
-
     return params;
 }
 
@@ -48,6 +43,7 @@ async function router(req, res) {
         res.writeHead(404);
         return res.end("JS file not found");
     }
+
     if (url.startsWith(FILES_PREFIX)) {
         const file = url.split(FILES_PREFIX)[1];
         const filePath = path.normalize(path.join(FILES_DIR, file + ".fb2"));
@@ -56,8 +52,11 @@ async function router(req, res) {
             return res.end("Forbidden");
         }
         if (fs.existsSync(filePath)) {
-            res.writeHead(200, { "Content-Type": "application/xml" });
-            return res.end(fs.readFileSync(filePath));
+            const buffer = fs.readFileSync(filePath);
+            const content = renderFb2ToHtml(buffer);
+            const html = await render("book.twig", { title: file, content });
+            res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
+            return res.end(html);
         }
         res.writeHead(404);
         return res.end("File not found");
