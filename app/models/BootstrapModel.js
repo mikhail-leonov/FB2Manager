@@ -1,9 +1,7 @@
 const db = require("../../core/db");
 
-const REQUIRED_TABLES = [
-    "Books", "Authors", "Genres", "Series",
-    "BookAuthors", "BookGenres", "BookSeries"
-];
+const { ALL_TABLES } = require("../../core/constants");
+
 
 class BootstrapModel {
 
@@ -13,7 +11,7 @@ class BootstrapModel {
         ).all();
 
         const existing = new Set(rows.map(r => r.name));
-        return REQUIRED_TABLES.every(t => existing.has(t));
+        return ALL_TABLES.every(t => existing.has(t));
     }
 
     hasGenres() {

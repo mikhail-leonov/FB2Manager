@@ -2,12 +2,12 @@ const twig = require("twig");
 const path = require("path");
 const fs = require("fs");
 
-const ROOT = path.join(__dirname, "..", "views");
+const { VIEWS_DIR } = require("./constants");
 
 twig.cache(false);
 
 function render(template, data = {}) {
-    const file = path.join(ROOT, template);
+    const file = path.join(VIEWS_DIR, template);
 
     if (!fs.existsSync(file)) {
         throw new Error("View not found: " + template);

@@ -1,6 +1,7 @@
 const { render } = require("../../core/view");
 const BookModel = require("../models/BookModel");
 const { renderTable, renderJson } = require("../services/ViewTable");
+const { respond, error } = require("../services/Response");
 
 class BookController {
 
@@ -30,33 +31,6 @@ class BookController {
         const result = BookModel.delete(params.id);
         return respond(req, res, "Book Deleted", { deleted: result.changes });
     }
-}
-
-/* =========================
-   RESPONSE LAYER
-========================= */
-
-async function respond(req, res, title, data, isTable = false) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const asJson = url.searchParams.get("json");
-    if (asJson) {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify(data, null, 2));
-    }
-    let content;
-    if (Array.isArray(data) && isTable) {
-        content = renderTable(data);
-    } else {
-        content = renderJson(data);
-    }
-    const html = await render("page.twig", { title, content });
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(html);
-}
-
-function error(res, msg, code = 400) {
-    res.writeHead(code);
-    res.end(msg);
 }
 
 module.exports = BookController;

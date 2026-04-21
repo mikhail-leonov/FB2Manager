@@ -1,0 +1,40 @@
+const { render } = require("../../core/view");
+const {
+    CONTENT_TYPE_JSON,
+    CONTENT_TYPE_HTML
+} = require("../../core/constants");
+const { renderTable, renderJson } = require("./ViewTable");
+
+function getUrl(req) {
+    return new URL(req.url, `http://${req.headers.host}`);
+}
+
+async function respond(req, res, title, data, isTable = false) {
+    const url = getUrl(req);
+    const asJson = url.searchParams.get("json");
+
+    if (asJson) {
+        res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
+        return res.end(JSON.stringify(data, null, 2));
+    }
+
+    let content = (Array.isArray(data) && isTable)
+        ? renderTable(data)
+        : renderJson(data);
+
+    const html = await render("page.twig", { title, content });
+
+    res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
+    res.end(html);
+}
+
+function error(res, msg, code = 400) {
+    res.writeHead(code);
+    res.end(msg);
+}
+
+module.exports = {
+    respond,
+    error,
+    getUrl
+};

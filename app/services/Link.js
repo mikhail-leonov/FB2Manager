@@ -2,6 +2,10 @@ function makeBookLink(link) {
     return `<a href="/book/${link.book_id}">${link.title}</a>`;
 }
 
+function makeFileLink(link) {
+    return `<a href="/files/${link.hash}">${link.title}</a>`;
+}
+
 function makeAuthorLink(link) {
     const name = `${link.firstname || ""} ${link.lastname || ""}`.trim();
     return `<a href="/author/${link.author_id}">${name}</a>`;
@@ -17,6 +21,7 @@ function makeSeriesLink(link) {
 
 module.exports = {
     makeBookLink,
+    makeFileLink,
     makeAuthorLink,
     makeGenreLink,
     makeSeriesLink

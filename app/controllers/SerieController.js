@@ -1,6 +1,7 @@
 const { render } = require("../../core/view");
 const SerieModel = require("../models/SerieModel");
 const { renderTable, renderJson } = require("../services/ViewTable");
+const { respond, error } = require("../services/Response");
 
 class SerieController {
 
@@ -18,32 +19,6 @@ class SerieController {
 
         return respond(req, res, `Series: ${params.id}`, data);
     }
-}
-
-/* RESPONSE (same as above) */
-
-async function respond(req, res, title, data, isTable = false) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const asJson = url.searchParams.get("json");
-
-    if (asJson) {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify(data, null, 2));
-    }
-
-    let content = (Array.isArray(data) && isTable)
-        ? renderTable(data)
-        : renderJson(data);
-
-    const html = await render("page.twig", { title, content });
-
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(html);
-}
-
-function error(res, msg, code = 400) {
-    res.writeHead(code);
-    res.end(msg);
 }
 
 module.exports = SerieController;

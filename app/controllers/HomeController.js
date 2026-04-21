@@ -1,10 +1,10 @@
-const { render } = require("../../core/view");
+const { respond } = require("../services/Response");
 
 class HomeController {
     static async index(req, res) {
-        const html = await render("page.twig", { title: "My FB2 Collection", content: "" });
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(html);
+        return respond(req, res, "My FB2 Collection", {
+            message: "Welcome to your FB2 library"
+        });
     }
 }
 

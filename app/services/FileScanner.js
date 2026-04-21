@@ -1,10 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const UPLOAD_DIR = path.join(__dirname, "..", "..", "upload");
+const { FB2_EXTENSION, UPLOAD_DIR } = require("../../core/constants");
 
 function isFb2(filePath) {
-    const isFB2 = path.extname(filePath).toLowerCase() === ".fb2";
+    const isFB2 = path.extname(filePath).toLowerCase() === FB2_EXTENSION;
      if (!isFB2) {
         try {
             fs.unlinkSync(filePath);

@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
+const { FILES_DIR, FILES_PREFIX, JS_PREFIX, CONTENT_TYPE_JS } = require("../core/constants");
+
 const HomeController = require("./controllers/HomeController");
 const BookController = require("./controllers/BookController");
 const ImportController = require("./controllers/ImportController");
@@ -30,14 +32,25 @@ function match(url, route) {
 async function router(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`).pathname;
 
-    if (url.startsWith("/js/")) {
+    if (url.startsWith(JS_PREFIX)) {
         const filePath = path.join(__dirname, "..", url);
         if (fs.existsSync(filePath)) {
-            res.writeHead(200, { "Content-Type": "application/javascript" });
+            res.writeHead(200, { "Content-Type": CONTENT_TYPE_JS });
             return res.end(fs.readFileSync(filePath));
         }
         res.writeHead(404);
         return res.end("JS file not found");
+    }
+    if (url.startsWith(FILES_PREFIX)) {
+        const file = url.split(FILES_PREFIX)[1];
+        const filePath = path.join(FILES_DIR, file + ".fb2");
+    
+        if (fs.existsSync(filePath)) {
+            res.writeHead(200, { "Content-Type": "application/xml" });
+            return res.end(fs.readFileSync(filePath));
+        }
+        res.writeHead(404);
+        return res.end("File not found");
     }
 
     const routes = [

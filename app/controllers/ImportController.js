@@ -1,14 +1,14 @@
 const { importBooks } = require("../services/ImportService");
+const { respond, error } = require("../services/Response");
 
 class ImportController {
-    static run(req, res) {
-        const result = importBooks();
-
-        res.writeHead(200, {
-            "Content-Type": "application/json"
-        });
-
-        res.end(JSON.stringify(result));
+    static async run(req, res) {
+        try {
+            const result = importBooks();
+            return respond(req, res, "Import Result", result);
+        } catch (e) {
+            return error(res, e.message);
+        }
     }
 }
 

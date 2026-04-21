@@ -24,28 +24,14 @@ const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
  * IMPORT FILTER RULES
  * =========================
  */
-const IMPORT_RULES = {
-    allowedLanguages: ["en", "ru"],
-    blockedLanguages: null,
-    blockedAuthors: ["Some Author"],
-    allowedGenres: [
-        'asian_fantasy','sf_history','dystopian','sf_action','boyar_anime',
-        'everyday_fantasy','sf_heroic','sf_fantasy_city','sf_detective',
-        'dorama','foreign_sf','historical_fantasy','sf_cyberpunk',
-        'sf_space','sf_litrpg','magic_school','sf_mystic',
-        'fairy_fantasy','sf','nsf','popadancy','popadanec',
-        'sf_postapocalyptic','adventure_fantasy','sf_industrial_magic',
-        'sf_realrpg','russian_fantasy','slavic_fantasy','sf_su',
-        'modern_tale','sf_social','sf_stimpank','dark_fantasy',
-        'sf_technofantasy','sf_horror','utopia','sf_etc',
-        'fantasy_det','sf_fantasy','hronoopera','sf_epic',
-        'sf_humor','love_history','love_short','love_sf',
-        'love','love_detective','love_hard','love_contemporary',
-        'love_erotica','adventure','network_literature','adv_history',
-        'nonf_biography','sf_magic'
-    ],
-    blockedGenres: ['det_lady']
-};
+const {
+    IMPORT_ALLOWED_LANGUAGES,
+    IMPORT_BLOCKED_LANGUAGES,
+    IMPORT_BLOCKED_AUTHORS,
+    IMPORT_ALLOWED_GENRES,
+    IMPORT_BLOCKED_GENRES,
+    FILES_DIR
+} = require("../../core/constants");
 
 /**
  * =========================
@@ -178,10 +164,10 @@ function extractTitle(json, fallback) {
  */
 function shouldSkipImport({ authors, language, genres }) {
 
-    if (IMPORT_RULES.allowedLanguages && !IMPORT_RULES.allowedLanguages.includes(language)) {
+    if (IMPORT_ALLOWED_LANGUAGES && !IMPORT_ALLOWED_LANGUAGES.includes(language)) {
         return `language not allowed: ${language}`;
     }
-    if (IMPORT_RULES.blockedLanguages?.includes(language)) {
+    if (IMPORT_BLOCKED_LANGUAGES?.includes(language)) {
         return `language blocked: ${language}`;
     }
 
@@ -190,21 +176,21 @@ function shouldSkipImport({ authors, language, genres }) {
     );
 
     for (const a of authorNames) {
-        if (IMPORT_RULES.blockedAuthors?.includes(a)) {
+        if (IMPORT_BLOCKED_AUTHORS?.includes(a)) {
             return `author blocked: ${a}`;
         }
     }
 
     const badGenre = genres.find(g =>
-        IMPORT_RULES.blockedGenres?.includes(g)
+        IMPORT_BLOCKED_GENRES?.includes(g)
     );
     if (badGenre) {
         return `genre blocked: ${badGenre}`;
     }
 
-    if (IMPORT_RULES.allowedGenres?.length) {
+    if (IMPORT_ALLOWED_GENRES?.length) {
         const ok = genres.some(g =>
-            IMPORT_RULES.allowedGenres.includes(g)
+            IMPORT_ALLOWED_GENRES.includes(g)
         );
         if (!ok) {
             const g = genres.join(', ');
@@ -334,6 +320,14 @@ function importBooks() {
                     BookSerieModel.link( book.book_id, serie.serie_id, s.number );
                     console.log(` - SERIES: ${s.title} (#${s.number || "?"})` );
                 }
+            }
+
+            const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
+
+            try {
+                fs.copyFileSync(file, dest);
+            } catch (e) {
+                console.error(`COPY FAILED: ${file} -> ${dest}`, e.message);
             }
 
             fs.unlinkSync(file);

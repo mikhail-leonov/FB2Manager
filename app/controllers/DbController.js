@@ -1,6 +1,7 @@
 const { render } = require("../../core/view");
 const { dumpDb, dumpTable, stats, schema, cleanDb } = require("../services/DbDumpService");
 const { renderTable, renderJson } = require("../services/ViewTable");
+const { respond, error } = require("../services/Response");
 
 class DbController {
 
@@ -32,44 +33,6 @@ class DbController {
         const result = cleanDb();
         return respond(req, res, "DB Clean", result);
     }
-}
-
-/* =========================
-   RESPONSE LAYER
-========================= */
-
-async function respond(req, res, title, data, isTable = false) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const asJson = url.searchParams.get("json");
-
-    if (asJson) {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify(data, null, 2));
-    }
-
-    let content;
-
-    if (Array.isArray(data) && isTable) {
-        content = renderTable(data);
-    } else {
-        content = renderJson(data);
-    }
-
-    const html = await render("page.twig", {
-        title,
-        content
-    });
-
-    res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8"
-    });
-
-    res.end(html);
-}
-
-function error(res, msg) {
-    res.writeHead(400);
-    res.end(msg);
 }
 
 module.exports = DbController;

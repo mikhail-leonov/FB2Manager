@@ -1,5 +1,6 @@
 const db = require("../../core/db");
-const { makeBookLink, makeAuthorLink, makeGenreLink, makeSeriesLink } = require("../services/Link");
+const { makeBookLink, makeAuthorLink, makeGenreLink, makeSeriesLink, makeFileLink } = require("../services/Link");
+
 
 class BookModel {
 
@@ -32,6 +33,7 @@ class BookModel {
             return {
                 ...book,
                 book_html: makeBookLink(book),
+                file_html: makeFileLink(book),
                 authors_html: authors.map(makeAuthorLink).join(", "),
                 genres_html:  genres.map(makeGenreLink).join(", "),
                 series_html:  series.map(s => {

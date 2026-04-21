@@ -1,19 +1,12 @@
 const db = require("../../core/db");
 
-const TABLES = [
-    "Books",
-    "Authors",
-    "Genres",
-    "Series",
-    "BookAuthors",
-    "BookGenres",
-    "BookSeries"
-];
+const { ALL_TABLES } = require("../../core/constants");
+
 
 function dumpDb() {
     const result = {};
 
-    for (const table of TABLES) {
+    for (const table of ALL_TABLES) {
         try {
             result[table] = db.prepare(`SELECT * FROM ${table}`).all();
         } catch (e) {
@@ -25,7 +18,7 @@ function dumpDb() {
 }
 
 function dumpTable(table) {
-    if (!TABLES.includes(table)) {
+    if (!ALL_TABLES.includes(table)) {
         throw new Error("Invalid table");
     }
 
@@ -35,7 +28,7 @@ function dumpTable(table) {
 function stats() {
     const result = {};
 
-    for (const table of TABLES) {
+    for (const table of ALL_TABLES) {
         try {
             const row = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get();
             result[table] = row.count;
