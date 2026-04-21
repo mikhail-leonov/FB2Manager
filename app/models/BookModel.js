@@ -26,17 +26,17 @@ class BookModel {
         `);
     
         return books.map(book => {
-            const authors = getAuthors.all(book.book_id);
-            const genres  = getGenres.all(book.book_id);
-            const series  = getSeries.all(book.book_id);
+            const a = getAuthors.all(book.book_id);
+            const g = getGenres.all(book.book_id);
+            const s = getSeries.all(book.book_id);
     
             return {
                 ...book,
-                book_html: makeBookLink(book),
-                file_html: makeFileLink(book),
-                authors_html: authors.map(makeAuthorLink).join(", "),
-                genres_html:  genres.map(makeGenreLink).join(", "),
-                series_html:  series.map(s => {
+                title: makeBookLink(book),
+                read: makeFileLink(book),
+                authors: a.map(makeAuthorLink).join(", "),
+                genres:  g.map(makeGenreLink).join(", "),
+                serie:  s.map(s => {
                     const link = makeSeriesLink(s);
                     return s.sequence_number
                     ? `${link} (#${s.sequence_number})`
@@ -60,7 +60,7 @@ class BookModel {
     static getByIds(ids) {
         if (!Array.isArray(ids) || ids.length === 0) { return []; }
         const param = ids.map(() => "?").join(",");
-        const query = `SELECT * FROM Books WHERE book_id IN (${param})`;
+        const query = `SELECT title, book_id, hash FROM Books WHERE book_id IN (${param})`;
         const rows = db.prepare(query).all(...ids);
         return this.populateBooks(rows);
     }

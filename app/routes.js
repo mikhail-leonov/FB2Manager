@@ -58,13 +58,19 @@ async function router(req, res) {
         ["GET", "/books",     		BookController.index],
 	["GET", "/import",    		ImportController.run],
         ["GET", "/book/:id",  		BookController.show],
+
+        ["GET", "/authors",   		AuthorController.index],
         ["GET", "/author/:id",		AuthorController.show],
         ["GET", "/author/:id/books", 	AuthorController.books],
-        ["GET", "/genre/:id", 		GenreController.show],
-        ["GET", "/serie/:id", 		SerieController.show],
-        ["GET", "/authors",   		AuthorController.index],
+
         ["GET", "/genres",    		GenreController.index],
+        ["GET", "/genre/:id", 		GenreController.show],
+        ["GET", "/genre/:id/books", 	GenreController.books],
+
         ["GET", "/series",    		SerieController.index],
+        ["GET", "/serie/:id", 		SerieController.show],
+        ["GET", "/serie/:id/books", 	SerieController.books],
+
         ["GET", "/db",        		DbController.dump],
         ["GET", "/db/:name",  		DbController.table],
         ["GET", "/db-stats",  		DbController.stats],

@@ -12,11 +12,11 @@ function makeAuthorLink(link) {
 }
 
 function makeGenreLink(link) {
-    return `<a href="/genre/${link.genre_id}">${link.title}</a>`;
+    return `<a href="/genre/${link.genre_id}/books">${link.title}</a>`;
 }
 
 function makeSeriesLink(link) {
-    return `<a href="/serie/${link.serie_id}">${link.title}</a>`;
+    return `<a href="/serie/${link.serie_id}/books">${link.title}</a>`;
 }
 
 module.exports = {

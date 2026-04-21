@@ -1,23 +1,21 @@
-const { render } = require("../../core/view");
 const BookModel = require("../models/BookModel");
+
+const { render } = require("../../core/view");
 const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
+const { BOOK_COLUMNS } = require("../services/tableColumns");
 
 class BookController {
 
     static async index(req, res) {
         const data = BookModel.getAll();
-        return respond(req, res, "Books", data, true);
+        return respond(req, res, "Books", data, true, BOOK_COLUMNS.hidden );
     }
-
     static async show(req, res, params) {
         const data = BookModel.getById(params.id);
-        if (!data) {
-            return error(res, "Book not found", 404);
-        }
-        return respond(req, res, `Book: ${params.id}`, data);
+        if (!data) { return error(res, "Book not found", 404); }
+        return respond(req, res, `Book: ${params.id}`, data, true, BOOK_COLUMNS.hidden );
     }
-
     static async create(req, res, body) {
         try {
             const result = BookModel.create(body);
@@ -26,7 +24,6 @@ class BookController {
             return error(res, e.message);
         }
     }
-
     static async delete(req, res, params) {
         const result = BookModel.delete(params.id);
         return respond(req, res, "Book Deleted", { deleted: result.changes });

@@ -9,7 +9,7 @@ function getUrl(req) {
     return new URL(req.url, `http://${req.headers.host}`);
 }
 
-async function respond(req, res, title, data, isTable = false) {
+async function respond(req, res, title, data, isTable = false, hiddenColumns = []) {
     const url = getUrl(req);
     const asJson = url.searchParams.get("json");
 
@@ -19,7 +19,7 @@ async function respond(req, res, title, data, isTable = false) {
     }
 
     let content = (Array.isArray(data) && isTable)
-        ? renderTable(data)
+        ? renderTable(data, hiddenColumns)
         : renderJson(data);
 
     const html = await render("page.twig", { title, content });
