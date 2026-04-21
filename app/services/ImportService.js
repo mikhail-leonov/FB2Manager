@@ -284,15 +284,18 @@ function importBooks() {
     let skipped = 0;
     let deleted = 0;
     let index = 0;
+    let total = files.length;
+
 
     const existing = new Set(
         BookModel.getAllHashes().map(b => b.hash)
     );
 
     Log(`Found ${files.length} files for importing...`);
-
+    const totalStart = Date.now();
    
     for (const file of files) {
+        const bookStart = Date.now();
         try {
             index++;
             const parsed = parseBook(file);
@@ -304,7 +307,7 @@ function importBooks() {
                 fs.unlinkSync(file);
                 deleted++;
 
-                Log(`${index}.SKIPPED duplicate: ${book.title}`);
+                Log(`${index}/${total}.SKIPPED duplicate: ${book.title} : (${Date.now() - bookStart}ms)`);
                 continue;
             }
 
@@ -318,7 +321,7 @@ function importBooks() {
             if (reason) {
                 skipped++;
 
-                Log(`${index}.SKIPPED (${reason}): ${book.title}`);
+                Log(`${index}/${total}.SKIPPED (${reason}): ${book.title} : (${Date.now() - bookStart}ms)`);
                 continue;
             }
 
@@ -327,7 +330,7 @@ function importBooks() {
             existing.add(book.hash);
             imported++;
 
-            Log(`${index}.IMPORTED: ${book.title}`);
+            Log(`${index}/${total}.IMPORTED: ${book.title} : (${Date.now() - bookStart}ms)`);
 
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {
@@ -362,11 +365,13 @@ function importBooks() {
     		const cleanedXml = removeBinaryNodes(xml);
     		fs.writeFileSync(dest, cleanedXml, "utf8"); // always safe
             } catch (e) {
-                Log(`${index}.COPY FAILED: ${file} -> ${dest} ${e.message}`);
+                Log(`${index}/${total}.COPY FAILED: ${file} -> ${dest} ${e.message}`);
             }
 
             fs.unlinkSync(file);
             deleted++;
+
+            Log(`${index}/${total}.DONE in ${Date.now() - bookStart}ms`);
 
         } catch (e) {
             Log(`FAILED: ${file} -> ${e.message}`);
@@ -375,7 +380,9 @@ function importBooks() {
 
     removeEmptyDirs();
 
-    Log(`DONE: \nimported=${imported}, \nskipped=${skipped}, \ndeleted=${deleted}`);
+    const totalMs = Date.now() - totalStart;
+    const totalSec = (totalMs / 1000).toFixed(1);
+    Log(`DONE in ${totalSec}s: \nimported=${imported}, \nskipped=${skipped}, \ndeleted=${deleted}`);
 
     return { imported, skipped, deleted };
 }
