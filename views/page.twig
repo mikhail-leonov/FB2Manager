@@ -18,28 +18,40 @@
 
     <div class="mb-3 d-flex flex-wrap">
       <a href="/" class="btn btn-outline-dark me-2 mb-2">Home</a>
-
       <a href="/import" class="btn btn-outline-dark me-2 mb-2">Import</a>
       <a href="/books" class="btn btn-outline-dark me-2 mb-2">Full books</a>
-
-      <a href="/db" class="btn btn-outline-dark me-2 mb-2">DB All</a>
-      <a href="/db/Books" class="btn btn-outline-dark me-2 mb-2">Books</a>
-      <a href="/db/Authors" class="btn btn-outline-dark me-2 mb-2">Authors</a>
-      <a href="/db/Genres" class="btn btn-outline-dark me-2 mb-2">Genres</a>
-      <a href="/db/BookAuthors" class="btn btn-outline-dark me-2 mb-2">Book Authors</a>
-      <a href="/db/BookGenres" class="btn btn-outline-dark me-2 mb-2">Book Genres</a>
-      <a href="/db/BookSeries" class="btn btn-outline-dark me-2 mb-2">Book Series</a>
-
-      <a href="/db-stats" class="btn btn-outline-dark me-2 mb-2">Stats</a>
-      <a href="/db-schema" class="btn btn-outline-dark me-2 mb-2">Schema</a>
-      <a href="/db-clean" class="btn btn-outline-danger me-2 mb-2">Clean DB</a>
     </div>
+
+    {% if page %}
+    <nav class="mb-3">
+      <ul class="pagination">
+
+        {% if hasPrev %}
+        <li class="page-item">
+          <a class="page-link" href="{{path}}?page={{page - 1}}">Previous</a>
+        </li>
+        {% endif %}
+
+        <li class="page-item active">
+          <span class="page-link">Page {{page}}</span>
+        </li>
+
+        {% if hasNext %}
+        <li class="page-item">
+          <a class="page-link" href="{{path}}?page={{page + 1}}">Next</a>
+        </li>
+        {% endif %}
+
+      </ul>
+    </nav>
+    {% endif %}
 
     <div>
       {{content|raw}}
     </div>
 
   </div>
+
   <script src="/js/app.js"></script>
 </body>
 </html>

@@ -12,8 +12,9 @@ class GenreController {
     static async index(req, res) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
         const data = GenreModel.getAll(page);
-        return respond(req, res, "Genres", data, true, GENRE_COLUMNS.hidden);
+        return respond(req, res, "Genres", data, true, GENRE_COLUMNS.hidden, { page, limit, hasNext: data.length === limit, hasPrev: page > 1 });
     }
     static async show(req, res, params) {
         const data = GenreModel.getById(params.id);
@@ -26,7 +27,7 @@ class GenreController {
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
         const data = BookGenreModel.getBooks(params.id, BookModel, page, limit);
         if (!data) { return error(res, "Genre not found", 404); }
-        return respond(req, res, `Genre: ${params.id}`, data, true, GENRE_COLUMNS.hidden);
+        return respond(req, res, `Genre: ${params.id}`, data, true, GENRE_COLUMNS.hidden, { page, limit, hasNext: data.length === limit, hasPrev: page > 1 });
     }
 }
 

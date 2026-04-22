@@ -9,7 +9,15 @@ function getUrl(req) {
     return new URL(req.url, `http://${req.headers.host}`);
 }
 
-async function respond(req, res, title, data, isTable = false, hiddenColumns = []) {
+async function respond(
+    req,
+    res,
+    title,
+    data,
+    isTable = false,
+    hiddenColumns = [],
+    pagination = null
+) {
     const url = getUrl(req);
     const asJson = url.searchParams.get("json");
 
@@ -19,9 +27,21 @@ async function respond(req, res, title, data, isTable = false, hiddenColumns = [
     }
 
     const isTableData = Array.isArray(data) && data.length && typeof data[0] === "object";
-    let content = (isTableData && isTable) ? renderTable(data, hiddenColumns) : renderJson(data);
 
-    const html = await render("page.twig", { title, content });
+    let content =
+        (isTableData && isTable)
+            ? renderTable(data, hiddenColumns)
+            : renderJson(data);
+
+    const html = await render("page.twig", {
+        title,
+        content,
+        path: url.pathname,
+        page: pagination?.page || 1,
+        limit: pagination?.limit || null,
+        hasNext: pagination?.hasNext || false,
+        hasPrev: pagination?.hasPrev || false
+    });
 
     res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
     res.end(html);

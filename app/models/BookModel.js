@@ -32,11 +32,11 @@ class BookModel {
     
             return {
                 ...book,
-                title: makeBookLink(book),
-                read: makeFileLink(book),
-                authors: a.map(makeAuthorLink).join(", "),
-                genres:  g.map(makeGenreLink).join(", "),
-                serie:  s.map(s => {
+                title2: makeBookLink(book),
+                Title: makeFileLink(book),
+                Authors: a.map(makeAuthorLink).join(", "),
+                Genres:  g.map(makeGenreLink).join(", "),
+                Serie:  s.map(s => {
                     const link = makeSeriesLink(s);
                     return s.sequence_number
                     ? `${link} (#${s.sequence_number})`
@@ -61,7 +61,7 @@ class BookModel {
     static getByIds(ids) {
         if (!Array.isArray(ids) || ids.length === 0) { return []; }
         const param = ids.map(() => "?").join(",");
-        const query = `SELECT title, book_id, hash FROM Books WHERE book_id IN (${param})`;
+        const query = `SELECT title, book_id, hash, annotation FROM Books WHERE book_id IN (${param})`;
         const rows = db.prepare(query).all(...ids);
         return this.populateBooks(rows);
     }

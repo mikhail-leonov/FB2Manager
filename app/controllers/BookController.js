@@ -10,8 +10,9 @@ class BookController {
     static async index(req, res) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
         const data = BookModel.getAll(page);
-        return respond(req, res, "Books", data, true, BOOK_COLUMNS.hidden );
+        return respond(req, res, "Books", data, true, BOOK_COLUMNS.hidden, {page, limit, hasNext: data.length === limit, hasPrev: page > 1 } );
     }
     static async show(req, res, params) {
         const data = BookModel.getById(params.id);

@@ -153,6 +153,27 @@ function extractSeries(json) {
 
 /**
  * =========================
+ * extractAnnotation
+ * =========================
+ */
+function extractAnnotation(json) {
+    try {
+        const annotation = json?.FictionBook?.description?.["title-info"]?.annotation;
+        if (!annotation) return null;
+        if (typeof annotation === "string") {
+            return annotation.trim();
+        }
+        if (typeof annotation === "object") {
+            return Object.values(annotation).flat().map(v => typeof v === "string" ? v : "").join(" ").replace(/\s+/g, " ").trim();
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * =========================
  * TITLE
  * =========================
  */
@@ -239,13 +260,14 @@ function parseBook(filePath) {
     const series = extractSeries(json);
 
     const title = extractTitle(json, path.basename(filePath));
+    const annotation = extractAnnotation(json);
 
     return {
         book: {
             book_id: crypto.randomBytes(12).toString("hex"),
             title,
             language,
-            annotation: null,
+            annotation,
             publication_date: null,
             hash: hashFile(buffer)
         },
