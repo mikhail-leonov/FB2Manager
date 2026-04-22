@@ -40,7 +40,7 @@ class BookModel {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const result = pagedQuery({ table: "BooksFTS", select: "rowid", where: "BooksFTS MATCH ?", params: [query], page, limit, orderBy: "rowid DESC" });
+        const result = pagedQuery({ table: "BooksFTS", select: "rowid, bm25(BooksFTS) AS score", where: "BooksFTS MATCH ?", params: [query], page, limit, orderBy: "score ASC" });
         const ids = result.data.map(r => r.rowid);
         return { data: this.getByIds(ids), pagination: result.pagination };
     }

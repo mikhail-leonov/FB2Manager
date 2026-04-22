@@ -302,8 +302,14 @@ function importBooks() {
    
     for (const file of files) {
         Log(`------------------------------------------------------------------`);
-        Log(`File: ${file}`);
         Log(`Index: ${index}/${total}`);
+        Log(`------------------------------------------------------------------`);
+        Log(`File: ${file}`);
+
+        const stats = fs.statSync(file);
+        const sizeKB = stats.size / 1024;
+        const sizeMB = sizeKB / 1024;
+        Log(`Size: ${sizeKB.toFixed(2)} KB (${sizeMB.toFixed(2)} MB)`);
 
         const bookStart = Date.now();
         try {
@@ -390,18 +396,28 @@ function importBooks() {
                 Log(`Copy result: OK`);
             } catch (e) {
                 Log(`Copy result: Failed`);
-                Log(`Error: ${e.message}`);
+                Log(`Reason: ${e.message}`);
             }
 
-            Log(`Time: ${Date.now() - bookStart}ms`);
+            const bookTime = Date.now() - bookStart;
+
+            if (bookTime > 3000) {
+                Log(`Warning: Slow parse detected`);
+            }
+            const kbPerMs = sizeKB / bookTime;
+            const msPerKB = bookTime / sizeKB;
+
+            Log(`Time: ${bookTime} ms`);
+            Log(`Speed: ${kbPerMs.toFixed(4)} KB/ms (${(kbPerMs * 1000).toFixed(2)} KB/s)`);
+            Log(`Cost: ${msPerKB.toFixed(2)} ms/KB`);
+            Log(`Time: ${bookTime}ms`);
             Log("\n");
 
             fs.unlinkSync(file);
             deleted++;
-            Log("\n");
 
         } catch (e) {
-            Log(`FAILED: ${file} -> ${e.message}`);
+            Log(`Error: ${e.message}`);
         }
     }
 

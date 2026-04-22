@@ -91,10 +91,10 @@ const FB2_EXTENSION = ".fb2";
 const IMPORT_ALLOWED_LANGUAGES = ["en", "ru"];
 const IMPORT_BLOCKED_LANGUAGES = null;
 
-const IMPORT_BLOCKED_ENCODINGS = null; // or null to disable
-const IMPORT_ALLOWED_ENCODINGS = ["utf-8", "win1251"]; // e.g. 
+const IMPORT_BLOCKED_ENCODINGS = null; 
+const IMPORT_ALLOWED_ENCODINGS = ["utf-8", "windows-1251"];
 
-const IMPORT_BLOCKED_AUTHORS = ["Some Author"];
+const IMPORT_BLOCKED_AUTHORS = null;
 
 const IMPORT_ALLOWED_GENRES = [
     'asian_fantasy','sf_history','dystopian','sf_action','boyar_anime',
