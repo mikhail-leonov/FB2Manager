@@ -36,7 +36,14 @@ class BookModel {
 
         return this.populateBooks(rows);
     }
-
+    static search(req, query) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const result = pagedQuery({ table: "BooksFTS", select: "rowid", where: "BooksFTS MATCH ?", params: [query], page, limit, orderBy: "rowid DESC" });
+        const ids = result.data.map(r => r.rowid);
+        return { data: this.getByIds(ids), pagination: result.pagination };
+    }
     static create(book) {
         const stmt = db.prepare(`INSERT INTO Books ( book_id,title,language,annotation,publication_date,hash ) VALUES (?, ?, ?, ?, ?, ?)`);
         return stmt.run( book.book_id, book.title, book.language, book.annotation, book.publication_date, book.hash );
