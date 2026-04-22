@@ -309,6 +309,7 @@ function importBooks() {
             index++;
             const parsed = parseBook(file);
             const book = parsed.book;
+            Log(`Encoding: ${parsed.encoding}`);
 
             encodingStats.add(parsed.encoding);
 

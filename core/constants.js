@@ -25,6 +25,36 @@ const BOOKS_SEED_FILE    = path.join(SQL_DIR, "books.sql");
 const AUTHORS_SEED_FILE  = path.join(SQL_DIR, "authors.sql");
 const LOG_FILE           = path.join(LOG_DIR, "logs.log");
 
+const ENCODING_MAP = {
+    "utf8": "utf-8",
+    "utf-8": "utf-8",
+    "utf 8": "utf-8",
+    "cp1251": "windows-1251",
+    "windows-1251": "windows-1251",
+    "win1251": "windows-1251",
+    "windows-1252": "windows-1252",
+    "cp1252": "windows-1252",
+    "latin1": "windows-1252",
+    "iso-8859-1": "windows-1252",
+    "iso-8859-2": "iso-8859-2",
+    "latin2": "iso-8859-2",
+    "cp1250": "windows-1250",
+    "windows-1250": "windows-1250",
+    "koi8-r": "koi8-r",
+    "koi8r": "koi8-r",
+    "koi8-u": "koi8-u",
+    "ibm866": "ibm866",
+    "cp866": "ibm866",
+    "866": "ibm866",
+    "shift_jis": "shift_jis",
+    "shift-jis": "shift_jis",
+    "sjis": "shift_jis",
+    "euc-kr": "euc-kr",
+    "euckr": "euc-kr",
+    "gbk": "gbk",
+    "gb2312": "gb2312",
+    "ascii": "utf-8"
+};
 // TABLES
 const TABLE_BOOKS        = "Books";
 const TABLE_AUTHORS      = "Authors";
@@ -117,6 +147,8 @@ module.exports = {
     TABLE_BOOK_GENRES,
     TABLE_BOOK_SERIES,
     ALL_TABLES,
+
+    ENCODING_MAP,
 
     IMPORT_BLOCKED_ENCODINGS, 
     IMPORT_ALLOWED_ENCODINGS,

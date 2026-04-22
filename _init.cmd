@@ -43,12 +43,46 @@ if not exist "package.json" (
     echo [!] package.json already exists, skipping init.
 )
 
-:: 4. Install the specific versions
+:: 4 Check Node.js installation
+echo [ERROR] winget is not available.
+echo [+] Attempting fallback download using built-in tools...
+
+set "NODE_URL=https://nodejs.org/dist/v24.14.1/node-v24.14.1-x64.msi"
+set "INSTALLER=%TEMP%\node-lts.msi"
+
+:: Try curl first (Windows 10+ has it)
+curl --version >nul 2>&1
+IF %ERRORLEVEL% EQU 0 (
+    echo [+] Downloading Node.js using curl...
+    curl -L %NODE_URL% -o "%INSTALLER%"
+) ELSE (
+    echo [!] curl not available, trying bitsadmin...
+
+    bitsadmin /transfer nodeDownloadJob %NODE_URL% "%INSTALLER%" >nul 2>&1
+)
+
+:: Check if download succeeded
+if not exist "%INSTALLER%" (
+    echo [ERROR] Failed to download Node.js installer.
+    echo Please install Node.js manually from https://nodejs.org/
+)
+
+echo [+] Installing Node.js silently...
+msiexec /i "%INSTALLER%" /qn /norestart
+
+echo [+] Cleaning up...
+del "%INSTALLER%"
+
+echo [+] Node.js installation completed.
+echo [+] Please re-run this script after installation.
+
+
+:: 5. Install the specific versions
 echo [+] Installing dependencies...
 echo This may take a moment (better-sqlite3 requires build tools)...
 call npm install %NODE_PACKAGES%
 
-:: 5. Verify installation
+:: 6. Verify installation
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo ====================================================
@@ -64,7 +98,7 @@ if %ERRORLEVEL% EQU 0 (
     pause
 )
 
-:: 6. Create .gitignore
+:: 7. Create .gitignore
 echo [+] Creating .gitignore...
 (
     echo backup/
