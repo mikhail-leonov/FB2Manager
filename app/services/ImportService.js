@@ -5,6 +5,7 @@ const path = require("path");
 const chardet = require("chardet");
 const iconv = require("iconv-lite");
 const { XMLParser, XMLBuilder } = require("fast-xml-parser");
+const { detectEncoding } = require("./encoding");
 
 const BookModel = require("../models/BookModel");
 
@@ -57,29 +58,6 @@ function hashFile(buffer) {
     return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
-/**
- * =========================
- * SMART ENCODING READER
- * =========================
- */
-function readFileSmart(filePath) {
-    const buffer = fs.readFileSync(filePath);
-    let encoding = chardet.detect(buffer) || "utf-8";
-    encoding = encoding.toLowerCase();
-    if (encoding.includes("windows-1251") || encoding.includes("cp1251")) {
-        encoding = "win1251";
-    }
-    return iconv.decode(buffer, encoding);
-}
-
-function detectEncoding(buffer) {
-    let encoding = chardet.detect(buffer) || "utf-8";
-    encoding = encoding.toLowerCase();
-    if (encoding.includes("windows-1251") || encoding.includes("cp1251")) {
-        encoding = "win1251";
-    }
-    return encoding;
-}
 
 /**
  * =========================
@@ -123,10 +101,15 @@ function extractGenres(json) {
     try {
         const info = json?.FictionBook?.description?.["title-info"];
         if (!info?.genre) return [];
+        const genres = Array.isArray(info.genre) ? info.genre : [info.genre];
+        return genres
+            .map(g => {
+                if (!g) return null;
+                if (typeof g === "string") return g;
+                return ( g["#text"] || g["_text"] || g["$text"] || (typeof g === "object" ? Object.values(g).find(v => typeof v === "string") : null) );
+            })
+            .filter(Boolean);
 
-        return Array.isArray(info.genre)
-            ? info.genre
-            : [info.genre];
     } catch {
         return [];
     }
@@ -202,27 +185,20 @@ function shouldSkipImport({ authors, language, genres, encoding }) {
         return `encoding blocked: ${encoding}`;
     }
 
-    const authorNames = authors.map(a =>
-        `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim()
-    );
-
+    const authorNames = authors.map(a => `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim() );
     for (const a of authorNames) {
         if (IMPORT_BLOCKED_AUTHORS?.includes(a)) {
             return `author blocked: ${a}`;
         }
     }
 
-    const badGenre = genres.find(g =>
-        IMPORT_BLOCKED_GENRES?.includes(g)
-    );
-    if (badGenre) {
+    const badGenre = genres.find(g => IMPORT_BLOCKED_GENRES?.includes(g) );
+    if (badGenre) { 
         return `genre blocked: ${badGenre}`;
     }
 
     if (IMPORT_ALLOWED_GENRES?.length) {
-        const ok = genres.some(g =>
-            IMPORT_ALLOWED_GENRES.includes(g)
-        );
+        const ok = genres.some(g => IMPORT_ALLOWED_GENRES.includes(g) );
         if (!ok) {
             const g = genres.join(', ');
             return `genre not allowed: ${g}`;
@@ -373,8 +349,7 @@ function importBooks() {
             imported++;
 
             Log(`Resolution: IMPORTED`);
-            Log(`Reason: ${reason}`);
-
+ 
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {
                     const author = AuthorModel.getOrCreate( a.firstname, a.middlename, a.lastname );

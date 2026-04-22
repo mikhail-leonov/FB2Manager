@@ -1,4 +1,7 @@
 const { XMLParser } = require("fast-xml-parser");
+const iconv = require("iconv-lite");
+const { detectEncoding } = require("./encoding");
+
 
 const parser = new XMLParser({
     ignoreAttributes: false,
@@ -7,23 +10,17 @@ const parser = new XMLParser({
 });
 
 function escapeHtml(str) {
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function renderInline(node) {
     if (typeof node === "string") {
         return escapeHtml(node);
     }
-
     if (!node || typeof node !== "object") {
         return "";
     }
-
     let html = "";
-
     for (const key in node) {
         const value = node[key];
 
@@ -147,7 +144,10 @@ function nodesToHtml(node) {
 }
 
 function renderFb2ToHtml(buffer) {
-    const json = parser.parse(buffer.toString("utf8"));
+    const encoding = detectEncoding(buffer);
+    const xml = iconv.decode(buffer, encoding);
+
+    const json = parser.parse(xml);
 
     const body = json?.FictionBook?.body;
     if (!body) return "<p>No content found.</p>";
@@ -155,5 +155,6 @@ function renderFb2ToHtml(buffer) {
     const bodies = Array.isArray(body) ? body : [body];
     return bodies.map(b => nodesToHtml(b)).join("\n");
 }
+
 
 module.exports = { renderFb2ToHtml };

@@ -36,6 +36,12 @@ class BookModel {
 
         return this.populateBooks(rows);
     }
+
+    static create(book) {
+        const stmt = db.prepare(`INSERT INTO Books ( book_id,title,language,annotation,publication_date,hash ) VALUES (?, ?, ?, ?, ?, ?)`);
+        return stmt.run( book.book_id, book.title, book.language, book.annotation, book.publication_date, book.hash );
+    }
+
     static getAllHashes() {
         return db.prepare("SELECT hash FROM Books").all();
     }
