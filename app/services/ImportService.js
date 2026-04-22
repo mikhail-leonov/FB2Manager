@@ -324,7 +324,9 @@ function importBooks() {
    
     for (const file of files) {
         Log(`------------------------------------------------------------------`);
-        Log("\n");
+        Log(`${file}`);
+        Log(`${index}/${total}`);
+
         const bookStart = Date.now();
         try {
             index++;
@@ -337,7 +339,9 @@ function importBooks() {
                 fs.unlinkSync(file);
                 deleted++;
 
-                Log(`${index}/${total}.SKIPPED duplicate: ${book.title} : ${file} : (${Date.now() - bookStart}ms)`);
+                Log(`Resolution: SKIPPED`);
+                Log(`Reason: duplicate book`);
+                Log(`Time: ${Date.now() - bookStart}ms`);
                 continue;
             }
 
@@ -352,7 +356,9 @@ function importBooks() {
             if (reason) {
                 skipped++;
 
-                Log(`${index}/${total}.SKIPPED (${reason}): ${book.title} : ${file} : (${Date.now() - bookStart}ms)`);
+                Log(`Resolution: SKIPPED`);
+                Log(`Reason: ${reason}`);
+                Log(`Time: ${Date.now() - bookStart}ms`);
                 continue;
             }
 
@@ -361,13 +367,14 @@ function importBooks() {
             existing.add(book.hash);
             imported++;
 
-            Log(`${index}/${total}.IMPORTED: ${book.title} : ${file} : (${Date.now() - bookStart}ms)`);
+            Log(`Resolution: IMPORTED`);
+            Log(`Reason: ${reason}`);
 
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {
                     const author = AuthorModel.getOrCreate( a.firstname, a.middlename, a.lastname );
                     BookAuthorModel.link(book.book_id, author.author_id);
-                    Log( ` - AUTHOR: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}` );
+                    Log( `Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}` );
                 }
             }
 
@@ -375,7 +382,7 @@ function importBooks() {
                 for (const g of parsed.genres) {
                     const genre = GenreModel.getOrCreate(g);
                     if (genre) { BookGenreModel.link(book.book_id, genre.genre_id); }
-                    Log(` - GENRE: ${g}`);
+                    Log(`Genre: ${g}`);
                 }
             }
             
@@ -383,11 +390,13 @@ function importBooks() {
                for (const s of parsed.series) {
                     const serie = SerieModel.getOrCreate(s.title);
                     BookSerieModel.link( book.book_id, serie.serie_id, s.number );
-                    Log(` - SERIES: ${s.title} (#${s.number || "?"})` );
+                    Log(`Serie: ${s.title} (#${s.number || "?"})` );
                 }
             }
 
             const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
+            Log(`Copy file to: ${dest}`);
+
             try {
 		// 
 		const buffer = fs.readFileSync(file);
@@ -395,14 +404,16 @@ function importBooks() {
     		const xml = iconv.decode(buffer, encoding);
     		const cleanedXml = removeBinaryNodes(xml);
     		fs.writeFileSync(dest, cleanedXml, "utf8"); // always safe
+                Log(`Reason: Ok`);
             } catch (e) {
-                Log(`${index}/${total}.COPY FAILED: ${file} -> ${dest} ${e.message}`);
+                Log(`Reason: Failed`);
+                Log(`Error: ${e.message}`);
             }
+
+            Log(`Time: ${Date.now() - bookStart}ms`);
 
             fs.unlinkSync(file);
             deleted++;
-
-            Log(`${index}/${total}.DONE in ${Date.now() - bookStart}ms`);
             Log("\n");
 
         } catch (e) {
