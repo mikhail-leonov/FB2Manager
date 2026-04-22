@@ -36,6 +36,9 @@ class BookModel {
 
         return this.populateBooks(rows);
     }
+    static getAllHashes() {
+        return db.prepare("SELECT hash FROM Books").all();
+    }
 
     static populateBooks(books) {
         if (!books.length) return [];
