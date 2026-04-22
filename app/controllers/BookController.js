@@ -4,6 +4,7 @@ const { render } = require("../../core/view");
 const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
 const { BOOK_COLUMNS } = require("../services/tableColumns");
+const { paginate } = require("../../core/pagination");
 
 class BookController {
 
@@ -11,8 +12,8 @@ class BookController {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const data = BookModel.getAll(page);
-        return respond(req, res, "Books", data, true, BOOK_COLUMNS.hidden, {page, limit, hasNext: data.length === limit, hasPrev: page > 1 } );
+        const result = BookModel.getAll(page, limit);
+        return respond( req, res, "Books", result.data, true, BOOK_COLUMNS.hidden, result.pagination );
     }
     static async show(req, res, params) {
         const data = BookModel.getById(params.id);

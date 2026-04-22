@@ -2,8 +2,6 @@ const GenreModel = require("../models/GenreModel");
 const BookGenreModel = require("../models/BookGenreModel");
 const BookModel = require("../models/BookModel");
 
-const { render } = require("../../core/view");
-const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
 const { GENRE_COLUMNS } = require("../services/tableColumns");
 
@@ -13,21 +11,47 @@ class GenreController {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const data = GenreModel.getAll(page);
-        return respond(req, res, "Genres", data, true, GENRE_COLUMNS.hidden, { page, limit, hasNext: data.length === limit, hasPrev: page > 1 });
+
+        const result = GenreModel.getAll(page, limit);
+
+        return respond(
+            req,
+            res,
+            "Genres",
+            result.data,
+            true,
+            GENRE_COLUMNS.hidden,
+            result.pagination
+        );
     }
+
     static async show(req, res, params) {
         const data = GenreModel.getById(params.id);
-        if (!data) { return error(res, "Genre not found", 404); }
+        if (!data) return error(res, "Genre not found", 404);
+
         return respond(req, res, `Genre: ${params.id}`, data, false, GENRE_COLUMNS.hidden);
     }
+
     static async books(req, res, params) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const data = BookGenreModel.getBooks(params.id, BookModel, page, limit);
-        if (!data) { return error(res, "Genre not found", 404); }
-        return respond(req, res, `Genre: ${params.id}`, data, true, GENRE_COLUMNS.hidden, { page, limit, hasNext: data.length === limit, hasPrev: page > 1 });
+
+        const result = BookGenreModel.getBooks(params.id, BookModel, page, limit);
+
+        if (!result.data.length && page === 1) {
+            return error(res, "Genre not found", 404);
+        }
+
+        return respond(
+            req,
+            res,
+            `Genre: ${params.id}`,
+            result.data,
+            true,
+            GENRE_COLUMNS.hidden,
+            result.pagination
+        );
     }
 }
 

@@ -314,6 +314,7 @@ function importBooks() {
     let index = 0;
     let total = files.length;
 
+    const encodingStats = new Set();
 
     const existing = new Set(
         BookModel.getAllHashes().map(b => b.hash)
@@ -333,6 +334,8 @@ function importBooks() {
             const parsed = parseBook(file);
             const book = parsed.book;
 
+            encodingStats.add(parsed.encoding);
+
             // duplicate check
             if (existing.has(book.hash)) {
                 skipped++;
@@ -342,6 +345,7 @@ function importBooks() {
                 Log(`Resolution: SKIPPED`);
                 Log(`Reason: duplicate book`);
                 Log(`Time: ${Date.now() - bookStart}ms`);
+                Log("\n");
                 continue;
             }
 
@@ -359,6 +363,7 @@ function importBooks() {
                 Log(`Resolution: SKIPPED`);
                 Log(`Reason: ${reason}`);
                 Log(`Time: ${Date.now() - bookStart}ms`);
+                Log("\n");
                 continue;
             }
 
@@ -404,9 +409,9 @@ function importBooks() {
     		const xml = iconv.decode(buffer, encoding);
     		const cleanedXml = removeBinaryNodes(xml);
     		fs.writeFileSync(dest, cleanedXml, "utf8"); // always safe
-                Log(`Reason: Ok`);
+                Log(`Copy result: OK`);
             } catch (e) {
-                Log(`Reason: Failed`);
+                Log(`Copy result: Failed`);
                 Log(`Error: ${e.message}`);
             }
 
@@ -423,6 +428,12 @@ function importBooks() {
     }
 
     removeEmptyDirs();
+
+    Log(`Encodigs:`);
+    for (const enc of encodingStats) {
+        Log(`- ${enc}`);
+    }
+
 
     const totalMs = Date.now() - totalStart;
     const totalSec = (totalMs / 1000).toFixed(1);

@@ -1,6 +1,6 @@
 const db = require("../../core/db");
 const { makeBookLink, makeAuthorLink, makeGenreLink, makeSeriesLink, makeFileLink } = require("../services/Link");
-
+const { pagedQuery } = require("../../core/dbpagination");
 
 class BookModel {
 
@@ -45,7 +45,6 @@ class BookModel {
     
             return {
                 ...book,
-                title2: makeBookLink(book),
                 Title: makeFileLink(book),
                 Authors: a.map(makeAuthorLink).join(", "),
                 Genres:  g.map(makeGenreLink).join(", "),
@@ -60,17 +59,14 @@ class BookModel {
     }
     
     static getAll(page = 1, limit = 20) {
-        const offset = (page - 1) * limit;
-        const books = db.prepare("SELECT book_id FROM Books ORDER BY rowid DESC LIMIT ? OFFSET ?").all(limit, offset);
-        const ids = books.map(r => r.book_id);
-        return this.getByIds(ids);
+	const result = pagedQuery({ table: "Books", select: "book_id", page, limit });
+        const ids = result.data.map(r => r.book_id);
+        return { data: this.getByIds(ids), pagination: result.pagination };
     }
-
     static getById(id) {
         const result = this.getByIds([id]);
         return result.length ? result[0] : null;
     }
-
     static getByIds(ids) {
         if (!Array.isArray(ids) || ids.length === 0) { return []; }
         const param = ids.map(() => "?").join(",");
@@ -78,16 +74,13 @@ class BookModel {
         const rows = db.prepare(query).all(...ids);
         return this.populateBooks(rows);
     }
-
     static create(book) {
         const stmt = db.prepare(`INSERT INTO Books ( book_id,title,language,annotation,publication_date,hash ) VALUES (?, ?, ?, ?, ?, ?)`);
         return stmt.run( book.book_id, book.title, book.language, book.annotation, book.publication_date, book.hash );
     }
-
     static delete(id) {
         return db.prepare("DELETE FROM Books WHERE book_id = ?").run(id);
     }
-
     static getAllHashes() {
         return db.prepare("SELECT hash FROM Books").all();
     }
