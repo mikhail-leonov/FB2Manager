@@ -3,7 +3,7 @@ const router = require("./app/routes");
 const { bootstrapDatabase } = require("./core/bootstrap");
 
 const PORT = 3000;
-const VERSION = "0.0.39";
+const VERSION = "0.0.40";
 
 // init DB + schema + samples
 bootstrapDatabase();
