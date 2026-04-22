@@ -1,7 +1,7 @@
 function renderTable(rows, hiddenColumns = []) {
     if (!rows || rows.length === 0) { return "<p>No data</p>"; }
     const keys = Object.keys(rows[0]).filter(k => !hiddenColumns.includes(k));
-    let html = "<table class='table table-bordered table-sm table-hover'>";
+    let html = "<table class='table'>";
     html += "<thead><tr>";
     for (const k of keys) { html += `<th>${k}</th>`; }
     html += "</tr></thead><tbody>";
