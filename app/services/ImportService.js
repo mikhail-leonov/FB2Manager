@@ -22,11 +22,6 @@ const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
 
 const { LOG_FILE } = require("../../core/constants");
 
-/**
- * =========================
- * IMPORT FILTER RULES
- * =========================
- */
 const {
     IMPORT_ALLOWED_LANGUAGES,
     IMPORT_BLOCKED_LANGUAGES,
@@ -38,41 +33,21 @@ const {
     FILES_DIR
 } = require("../../core/constants");
 
-/**
- * =========================
- * XML PARSER
- * =========================
- */
 const parser = new XMLParser({
     ignoreAttributes: false,
     parseTagValue: true,
     trimValues: true
 });
 
-/**
- * =========================
- * HASH
- * =========================
- */
 function hashFile(buffer) {
     return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
-
-/**
- * =========================
- * AUTHORS
- * =========================
- */
 function extractAuthors(json) {
     try {
         const info = json?.FictionBook?.description?.["title-info"];
         if (!info || !info.author) return [];
-
-        const authors = Array.isArray(info.author)
-            ? info.author
-            : [info.author];
-
+        const authors = Array.isArray(info.author) ? info.author : [info.author];
         return authors.map(a => ({
             firstname: a["first-name"] || "Unknown",
             middlename: a["middle-name"] || null,
@@ -83,20 +58,10 @@ function extractAuthors(json) {
     }
 }
 
-/**
- * =========================
- * LANGUAGE
- * =========================
- */
 function extractLanguage(json) {
     return json?.FictionBook?.description?.["title-info"]?.lang || null;
 }
 
-/**
- * =========================
- * GENRES
- * =========================
- */
 function extractGenres(json) {
     try {
         const info = json?.FictionBook?.description?.["title-info"];
@@ -106,20 +71,14 @@ function extractGenres(json) {
             .map(g => {
                 if (!g) return null;
                 if (typeof g === "string") return g;
-                return ( g["#text"] || g["_text"] || g["$text"] || (typeof g === "object" ? Object.values(g).find(v => typeof v === "string") : null) );
+                return (g["#text"] || g["_text"] || g["$text"] || (typeof g === "object" ? Object.values(g).find(v => typeof v === "string") : null));
             })
             .filter(Boolean);
-
     } catch {
         return [];
     }
 }
 
-/**
- * =========================
- * SERIES (NEW)
- * =========================
- */
 function extractSeries(json) {
     try {
         const info = json?.FictionBook?.description?.["title-info"];
@@ -134,18 +93,11 @@ function extractSeries(json) {
     }
 }
 
-/**
- * =========================
- * extractAnnotation
- * =========================
- */
 function extractAnnotation(json) {
     try {
         const annotation = json?.FictionBook?.description?.["title-info"]?.annotation;
         if (!annotation) return null;
-        if (typeof annotation === "string") {
-            return annotation.trim();
-        }
+        if (typeof annotation === "string") return annotation.trim();
         if (typeof annotation === "object") {
             return Object.values(annotation).flat().map(v => typeof v === "string" ? v : "").join(" ").replace(/\s+/g, " ").trim();
         }
@@ -155,71 +107,51 @@ function extractAnnotation(json) {
     }
 }
 
-/**
- * =========================
- * TITLE
- * =========================
- */
 function extractTitle(json, fallback) {
-    return ( json?.FictionBook?.description?.["title-info"]?.["book-title"] || fallback );
+    return (json?.FictionBook?.description?.["title-info"]?.["book-title"] || fallback);
 }
 
-/**
- * =========================
- * FILTER ENGINE
- * =========================
- */
 function shouldSkipImport({ authors, language, genres, encoding }) {
-
     if (IMPORT_ALLOWED_LANGUAGES && !IMPORT_ALLOWED_LANGUAGES.includes(language)) {
         return `language not allowed: ${language}`;
     }
     if (IMPORT_BLOCKED_LANGUAGES?.includes(language)) {
         return `language blocked: ${language}`;
     }
-
     if (IMPORT_ALLOWED_ENCODINGS?.length && !IMPORT_ALLOWED_ENCODINGS.includes(encoding)) {
         return `encoding not allowed: ${encoding}`;
     }
     if (IMPORT_BLOCKED_ENCODINGS?.includes(encoding)) {
         return `encoding blocked: ${encoding}`;
     }
-
-    const authorNames = authors.map(a => `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim() );
+    const authorNames = authors.map(a =>
+        `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim()
+    );
     for (const a of authorNames) {
         if (IMPORT_BLOCKED_AUTHORS?.includes(a)) {
             return `author blocked: ${a}`;
         }
     }
-
-    const badGenre = genres.find(g => IMPORT_BLOCKED_GENRES?.includes(g) );
-    if (badGenre) { 
+    const badGenre = genres.find(g => IMPORT_BLOCKED_GENRES?.includes(g));
+    if (badGenre) {
         return `genre blocked: ${badGenre}`;
     }
-
     if (IMPORT_ALLOWED_GENRES?.length) {
-        const ok = genres.some(g => IMPORT_ALLOWED_GENRES.includes(g) );
+        const ok = genres.some(g => IMPORT_ALLOWED_GENRES.includes(g));
         if (!ok) {
-            const g = genres.join(', ');
+            const g = genres.join(", ");
             return `genre not allowed: ${g}`;
         }
     }
-
     return null;
 }
 
-/**
- * =========================
- * PARSE BOOK
- * =========================
- */
 function parseBook(filePath) {
     const buffer = fs.readFileSync(filePath);
     const encoding = detectEncoding(buffer);
     const xml = iconv.decode(buffer, encoding);
 
     let json;
-
     try {
         json = parser.parse(xml);
     } catch {
@@ -228,13 +160,12 @@ function parseBook(filePath) {
 
     let authors = extractAuthors(json);
     if (!authors.length) {
-         authors = [AuthorModel.getById('000000000000000000000000')];
+        authors = [AuthorModel.getById("000000000000000000000000")];
     }
 
     const language = extractLanguage(json);
     const genres = extractGenres(json);
     const series = extractSeries(json);
-
     const title = extractTitle(json, path.basename(filePath));
     const annotation = extractAnnotation(json);
 
@@ -253,35 +184,32 @@ function parseBook(filePath) {
         encoding
     };
 }
-/**
- * =========================
- * IMPORT MAIN
- * =========================
- */
-function Log(msg) {
-    fs.appendFileSync(LOG_FILE, msg + "\n");
-    console.log(msg);
-}
 
 function removeBinaryNodes(fb2Content) {
     const localParser = new XMLParser({ ignoreAttributes: false });
-    const builder = new XMLBuilder({
-        ignoreAttributes: false,
-        format: true
-    });
+    const builder = new XMLBuilder({ ignoreAttributes: false, format: true });
     const json = localParser.parse(fb2Content);
     function removeBinary(obj) {
         if (!obj || typeof obj !== "object") return;
-        delete obj.binary; // <-- THIS is the key line
-        for (const key in obj) {
-            removeBinary(obj[key]);
-        }
+        delete obj.binary;
+        for (const key in obj) removeBinary(obj[key]);
     }
     removeBinary(json);
     return builder.build(json);
 }
 
-function importBooks() {
+// Yields to the event loop so SSE writes are flushed to the client
+function flush() {
+    return new Promise(resolve => setImmediate(resolve));
+}
+
+async function importBooks(onLog) {
+    function Log(msg) {
+        fs.appendFileSync(LOG_FILE, msg + "\n");
+        console.log(msg);
+        if (onLog) onLog(msg);
+    }
+
     const files = getAllFiles();
 
     let imported = 0;
@@ -289,6 +217,8 @@ function importBooks() {
     let deleted = 0;
     let index = 0;
     let total = files.length;
+    let kbPerMs = 0;
+    let msPerKB = 0;
 
     const encodingStats = new Set();
     const languageStats = new Set();
@@ -299,7 +229,7 @@ function importBooks() {
 
     Log(`Found ${files.length} files for importing...`);
     const totalStart = Date.now();
-   
+
     for (const file of files) {
         Log(`------------------------------------------------------------------`);
         Log(`Index: ${index}/${total}`);
@@ -319,67 +249,65 @@ function importBooks() {
             Log(`Encoding: ${parsed.encoding}`);
 
             encodingStats.add(parsed.encoding);
-            languageStats.add(parsed.language);
+            languageStats.add(parsed.book.language);
 
-            // duplicate check
             if (existing.has(book.hash)) {
                 skipped++;
                 fs.unlinkSync(file);
                 deleted++;
-
                 Log(`Resolution: SKIPPED`);
                 Log(`Reason: duplicate book`);
+                Log(`Deleted: true`);
                 Log(`Time: ${Date.now() - bookStart}ms`);
                 Log("\n");
+                await flush();
                 continue;
             }
 
-            // filter rules
             const reason = shouldSkipImport({
                 authors: parsed.authors,
                 language: book.language,
-                genres: parsed.genres, 
-                encoding: parsed.encoding 
+                genres: parsed.genres,
+                encoding: parsed.encoding
             });
 
             if (reason) {
                 skipped++;
-
                 Log(`Resolution: SKIPPED`);
                 Log(`Reason: ${reason}`);
                 Log(`Time: ${Date.now() - bookStart}ms`);
                 Log("\n");
+                await flush();
                 continue;
             }
 
-            // save book
             BookModel.create(book);
             existing.add(book.hash);
             imported++;
 
             Log(`Resolution: IMPORTED`);
- 
+
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {
-                    const author = AuthorModel.getOrCreate( a.firstname, a.middlename, a.lastname );
+                    const author = AuthorModel.getOrCreate(a.firstname, a.middlename, a.lastname);
                     BookAuthorModel.link(book.book_id, author.author_id);
-                    Log( `Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}` );
+                    Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
                 }
             }
 
             if (parsed.genres.length > 0) {
                 for (const g of parsed.genres) {
                     const genre = GenreModel.getOrCreate(g);
-                    if (genre) { BookGenreModel.link(book.book_id, genre.genre_id); }
+                    if (genre) BookGenreModel.link(book.book_id, genre.genre_id);
                     Log(`Genre: ${g}`);
                 }
             }
-            
-           if (parsed.series.length) {
-               for (const s of parsed.series) {
+
+            if (parsed.series.length) {
+                for (const s of parsed.series) {
                     const serie = SerieModel.getOrCreate(s.title);
-                    BookSerieModel.link( book.book_id, serie.serie_id, s.number );
-                    Log(`Serie: ${s.title} (#${s.number || "?"})` );
+                    BookSerieModel.link(book.book_id, serie.serie_id, s.number);
+                    Log(`Serie: ${s.title} (#${s.number || "?"})`);
                 }
             }
 
@@ -387,60 +315,63 @@ function importBooks() {
             Log(`Copy file to: ${dest}`);
 
             try {
-		// 
-		const buffer = fs.readFileSync(file);
-	    	const encoding = detectEncoding(buffer);
-    		const xml = iconv.decode(buffer, encoding);
-    		const cleanedXml = removeBinaryNodes(xml);
-    		fs.writeFileSync(dest, cleanedXml, "utf8"); // always safe
+                const buffer = fs.readFileSync(file);
+                const encoding = detectEncoding(buffer);
+                const xml = iconv.decode(buffer, encoding);
+                const cleanedXml = removeBinaryNodes(xml);
+                fs.writeFileSync(dest, cleanedXml, "utf8");
                 Log(`Copy result: OK`);
             } catch (e) {
                 Log(`Copy result: Failed`);
                 Log(`Reason: ${e.message}`);
             }
 
+            fs.unlinkSync(file);
+            deleted++;
+
             const bookTime = Date.now() - bookStart;
+            Log(`Deleted: true`);
 
             if (bookTime > 3000) {
                 Log(`Warning: Slow parse detected`);
             }
-            const kbPerMs = sizeKB / bookTime;
-            const msPerKB = bookTime / sizeKB;
+
+            kbPerMs = sizeKB / bookTime;
+            msPerKB = bookTime / sizeKB;
 
             Log(`Time: ${bookTime} ms`);
             Log(`Speed: ${kbPerMs.toFixed(4)} KB/ms (${(kbPerMs * 1000).toFixed(2)} KB/s)`);
             Log(`Cost: ${msPerKB.toFixed(2)} ms/KB`);
-            Log(`Time: ${bookTime}ms`);
             Log("\n");
-
-            fs.unlinkSync(file);
-            deleted++;
 
         } catch (e) {
             Log(`Error: ${e.message}`);
         }
+
+        // Yield to event loop after every file so SSE chunks are sent
+        await flush();
     }
 
     removeEmptyDirs();
 
-    Log(`Encodigs:`);
-    for (const enc of encodingStats) {
-        Log(`- ${enc}`);
-    }
+    Log(`Encodings:`);
+    for (const enc of encodingStats) Log(`- ${enc}`);
     Log("\n");
-    Log(`Languages:`);
-    for (const lng of languageStats) {
-        Log(`- ${lng}`);
-    }
 
+    Log(`Languages:`);
+    for (const lng of languageStats) Log(`- ${lng}`);
+    Log("\n");
 
     const totalMs = Date.now() - totalStart;
     const totalSec = (totalMs / 1000).toFixed(1);
-    Log(`DONE in ${totalSec}s: \nimported=${imported}, \nskipped=${skipped}, \ndeleted=${deleted}`);
+
+    Log(`Imported: ${imported}`);
+    Log(`Skipped: ${skipped}`);
+    Log(`Deleted: ${deleted}`);
+    Log("\n");
+    Log(`Done: ${totalSec}s`);
 
     return { imported, skipped, deleted };
 }
 
-module.exports = {
-    importBooks
-};
+module.exports = { importBooks };

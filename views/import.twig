@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Import — FB2 Collection</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --surface: #151820;
+      --surface2: #1c2030;
+      --border: #252a38;
+      --accent: #4ade80;
+      --accent2: #22d3ee;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    /* ── Nav ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .topbar a {
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: .3rem .7rem;
+      border-radius: 4px;
+      transition: color .2s, border-color .2s;
+    }
+    .topbar a:hover { color: var(--text); border-color: var(--accent); }
+
+    /* ── Header ── */
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .page-header h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+    .page-header h1 span { color: var(--accent); }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(74,222,128,.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .stat-card.imported { border-color: #22543d; }
+    .stat-card.skipped  { border-color: #7c3d00; }
+    .stat-card.deleted  { border-color: #581c1c; }
+    .stat-card.total    { border-color: #1e3a5f; }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: .65rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .5rem;
+    }
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: color .3s;
+    }
+    .stat-card.imported .stat-value { color: var(--accent); }
+    .stat-card.skipped  .stat-value { color: var(--warn); }
+    .stat-card.deleted  .stat-value { color: var(--danger); }
+    .stat-card.total    .stat-value { color: var(--accent2); }
+
+    /* ── Import button ── */
+    .import-btn-wrap { display: flex; align-items: center; gap: 1rem; }
+
+    #importBtn {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: .03em;
+      padding: .85rem 2.2rem;
+      background: var(--accent);
+      color: #0a1a10;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      transition: background .2s, transform .1s;
+    }
+    #importBtn:hover:not(:disabled) { background: #22c55e; transform: translateY(-1px); }
+    #importBtn:active:not(:disabled) { transform: translateY(0); }
+    #importBtn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,.3);
+      border-top-color: #0a1a10;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #statusBadge {
+      font-family: var(--mono);
+      font-size: .75rem;
+      padding: .3rem .8rem;
+      border-radius: 999px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    #statusBadge.running { color: var(--accent2); border-color: var(--accent2); }
+    #statusBadge.done    { color: var(--accent);  border-color: var(--accent); }
+    #statusBadge.error   { color: var(--danger);  border-color: var(--danger); }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      margin-bottom: 2rem;
+      display: none;
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-label {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: .4rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-track {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      width: 0%;
+      transition: width .4s ease;
+    }
+
+    /* ── Log terminal ── */
+    .terminal-wrap {
+      background: #080a0d;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .terminal-header {
+      background: var(--surface);
+      padding: .6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .terminal-title {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      margin-left: .5rem;
+    }
+
+    #logBox {
+      font-family: var(--mono);
+      font-size: .78rem;
+      line-height: 1.6;
+      color: #7c9e7c;
+      padding: 1rem 1.2rem;
+      height: 420px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    #logBox::-webkit-scrollbar { width: 4px; }
+    #logBox::-webkit-scrollbar-track { background: transparent; }
+    #logBox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .log-line { display: block; }
+    .log-line.separator { color: #2a3a2a; }
+    .log-line.resolution-imported { color: var(--accent); font-weight: 700; }
+    .log-line.resolution-skipped  { color: var(--warn); }
+    .log-line.resolution-error    { color: var(--danger); }
+    .log-line.file    { color: var(--accent2); }
+    .log-line.index   { color: #a78bfa; }
+    .log-line.done    { color: var(--accent); font-weight: 700; }
+    .log-line.summary { color: #e2e8f0; }
+
+    /* ── Final summary box ── */
+    #summaryBox {
+      display: none;
+      margin-top: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+    #summaryBox.visible { display: block; }
+    #summaryBox h5 {
+      font-family: var(--mono);
+      font-size: .75rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: .8rem;
+    }
+    .summary-item { text-align: center; }
+    .summary-item .n {
+      font-family: var(--mono);
+      font-size: 2rem;
+      font-weight: 700;
+      display: block;
+    }
+    .summary-item .l {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      .page-header h1 { font-size: 2rem; }
+      #logBox { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <div class="topbar">
+    <a href="/">← Home</a>
+    <a href="/books">Books</a>
+    <a href="/authors">Authors</a>
+    <a href="/genres">Genres</a>
+  </div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>FB2 <span>Import</span></h1>
+    <div class="import-btn-wrap">
+      <span id="statusBadge">idle</span>
+      <button id="importBtn" onclick="startImport()">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnLabel">▶ Run Import</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Live stat counters -->
+  <div class="stats-row">
+    <div class="stat-card total">
+      <div class="stat-label">Files found</div>
+      <div class="stat-value" id="cntTotal">—</div>
+    </div>
+    <div class="stat-card imported">
+      <div class="stat-label">Imported</div>
+      <div class="stat-value" id="cntImported">0</div>
+    </div>
+    <div class="stat-card skipped">
+      <div class="stat-label">Skipped</div>
+      <div class="stat-value" id="cntSkipped">0</div>
+    </div>
+    <div class="stat-card deleted">
+      <div class="stat-label">Deleted</div>
+      <div class="stat-value" id="cntDeleted">0</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressText">Processing...</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Terminal log -->
+  <div class="terminal-wrap">
+    <div class="terminal-header">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <span class="terminal-title">import.log — live stream</span>
+    </div>
+    <div id="logBox"><span style="color:#2a3a2a">// Click "Run Import" to begin…</span></div>
+  </div>
+
+  <!-- Final summary -->
+  <div id="summaryBox">
+    <h5>✓ Import Complete</h5>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="n" id="sumImported" style="color:var(--accent)">0</span>
+        <span class="l">imported</span>
+      </div>
+      <div class="summary-item">
+        <span class="n" id="sumSkipped" style="color:var(--warn)">0</span>
+        <span class="l">skipped</span>
+      </div>
+      <div class="summary-item">
+        <span class="n" id="sumDeleted" style="color:var(--danger)">0</span>
+        <span class="l">deleted</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let imported = 0, skipped = 0, deleted = 0, total = null, processed = 0;
+
+  function setStatus(s, label) {
+    const b = document.getElementById('statusBadge');
+    b.className = s;
+    b.textContent = label;
+  }
+
+  function classify(line) {
+    if (line.startsWith('---')) return 'separator';
+    if (line.startsWith('Index:')) return 'index';
+    if (line.startsWith('File:')) return 'file';
+    if (line.includes('IMPORTED')) return 'resolution-imported';
+    if (line.includes('SKIPPED')) return 'resolution-skipped';
+    if (line.startsWith('Error:')) return 'resolution-error';
+    if (line.startsWith('Done:') || line.startsWith('Imported:') || line.startsWith('Skipped:') || line.startsWith('Deleted:')) return 'summary';
+    return '';
+  }
+
+  function appendLog(line) {
+    const box = document.getElementById('logBox');
+    const span = document.createElement('span');
+    span.className = 'log-line ' + classify(line);
+    span.textContent = line + '\n';
+    box.appendChild(span);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function updateProgress() {
+    if (!total) return;
+    const pct = Math.min(100, Math.round((processed / total) * 100));
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('progressText').textContent = `Processing ${processed} / ${total}`;
+  }
+
+  function parseLine(line) {
+    const mTotal = line.match(/^Found (\d+) files/);
+    if (mTotal) { total = parseInt(mTotal[1]); document.getElementById('cntTotal').textContent = total; updateProgress(); return; }
+
+    if (line.includes('Resolution: IMPORTED')) { imported++; document.getElementById('cntImported').textContent = imported; processed++; updateProgress(); }
+    if (line.includes('Resolution: SKIPPED'))  { skipped++;  document.getElementById('cntSkipped').textContent  = skipped;  processed++; updateProgress(); }
+    if (line.includes('Deleted: true'))        { deleted++;  document.getElementById('cntDeleted').textContent  = deleted; }
+  }
+
+  async function startImport() {
+    const btn = document.getElementById('importBtn');
+    btn.disabled = true;
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('btnLabel').textContent = 'Running…';
+    setStatus('running', 'running');
+
+    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('progressWrap').classList.add('visible');
+    document.getElementById('summaryBox').classList.remove('visible');
+    imported = skipped = deleted = processed = 0; total = null;
+    ['cntImported','cntSkipped','cntDeleted'].forEach(id => document.getElementById(id).textContent = '0');
+    document.getElementById('cntTotal').textContent = '—';
+
+    try {
+      const resp = await fetch('/import-stream');
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const msg = line.slice(5).trim();
+          if (msg === '[DONE]') break;
+          parseLine(msg);
+          appendLog(msg);
+        }
+      }
+
+      // Final summary
+      document.getElementById('sumImported').textContent = imported;
+      document.getElementById('sumSkipped').textContent  = skipped;
+      document.getElementById('sumDeleted').textContent  = deleted;
+      document.getElementById('summaryBox').classList.add('visible');
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('progressPct').textContent = '100%';
+      setStatus('done', 'done');
+
+    } catch (e) {
+      appendLog('Error: ' + e.message);
+      setStatus('error', 'error');
+    }
+
+    btn.disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('btnLabel').textContent = '▶ Run Import';
+  }
+</script>
+</body>
+</html>

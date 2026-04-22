@@ -1,6 +1,6 @@
 @echo off
 
-set SRC=D:\Data\Books\unsorted\
+set SRC=D:\Projects\Books\books\
 set DEST=D:\Projects\Books\upload\
 
 echo Copying recursively...

@@ -1,14 +1,37 @@
+const { render } = require("../../core/view");
 const { importBooks } = require("../services/ImportService");
 const { respond, error } = require("../services/Response");
+const { CONTENT_TYPE_HTML } = require("../../core/constants");
 
 class ImportController {
+
     static async run(req, res) {
+        const html = await render("import.twig", {});
+        res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
+        return res.end(html);
+    }
+
+    static async stream(req, res) {
+        res.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        });
+
+        const send = (line) => {
+            const clean = line.replace(/\n$/, "");
+            if (clean) res.write(`data: ${clean}\n\n`);
+        };
+
         try {
-            const result = importBooks();
-            return respond(req, res, "Import Result", result);
+            await importBooks(send);
         } catch (e) {
-            return error(res, e.message);
+            send(`Error: ${e.message}`);
         }
+
+        res.write("data: [DONE]\n\n");
+        res.end();
     }
 }
 

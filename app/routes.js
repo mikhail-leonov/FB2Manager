@@ -65,7 +65,8 @@ async function router(req, res) {
     const routes = [
         ["GET", "/",          		HomeController.index],
         ["GET", "/books",     		BookController.index],
-	["GET", "/import",    		ImportController.run],
+        ["GET", "/import",              ImportController.run],
+        ["GET", "/import-stream",       ImportController.stream],
         ["GET", "/book/:id",  		BookController.show],
 
         ["GET", "/authors",   		AuthorController.index],

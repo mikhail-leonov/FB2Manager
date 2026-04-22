@@ -49,6 +49,8 @@ const ENCODING_MAP = {
     "shift_jis": "shift_jis",
     "shift-jis": "shift_jis",
     "sjis": "shift_jis",
+    "big5": "big5",
+    "big-5": "big5",
     "euc-kr": "euc-kr",
     "euckr": "euc-kr",
     "gbk": "gbk",
