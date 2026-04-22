@@ -291,6 +291,7 @@ function importBooks() {
     let total = files.length;
 
     const encodingStats = new Set();
+    const languageStats = new Set();
 
     const existing = new Set(
         BookModel.getAllHashes().map(b => b.hash)
@@ -312,6 +313,7 @@ function importBooks() {
             Log(`Encoding: ${parsed.encoding}`);
 
             encodingStats.add(parsed.encoding);
+            languageStats.add(parsed.language);
 
             // duplicate check
             if (existing.has(book.hash)) {
@@ -408,6 +410,11 @@ function importBooks() {
     Log(`Encodigs:`);
     for (const enc of encodingStats) {
         Log(`- ${enc}`);
+    }
+    Log("\n");
+    Log(`Languages:`);
+    for (const lng of languageStats) {
+        Log(`- ${lng}`);
     }
 
 
