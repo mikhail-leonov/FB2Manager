@@ -6,29 +6,42 @@ class BookModel {
 
     static populateBooks(books) {
         if (!books || books.length === 0) return [];
+ 
+        const bookIds = books.map(b => b.book_id);
+        const placeholders = bookIds.map(() => "?").join(",");
     
-        const getAuthors = db.prepare(`
-            SELECT a.* FROM Authors a
-            JOIN BookAuthors ba ON a.author_id = ba.author_id
-            WHERE ba.book_id = ?
-        `);
-    
-        const getGenres = db.prepare(`
-        SELECT g.* FROM Genres g
-        JOIN BookGenres bg ON g.genre_id = bg.genre_id
-            WHERE bg.book_id = ?
-        `);
-    
-        const getSeries = db.prepare(`
-            SELECT s.*, bs.sequence_number FROM Series s
-            JOIN BookSeries bs ON s.serie_id = bs.serie_id
-            WHERE bs.book_id = ?
-        `);
+        // =========================
+        // AUTHORS (batch)
+        // =========================
+        const authorRows = db.prepare(`SELECT ba.book_id, a.* FROM BookAuthors ba JOIN Authors a ON a.author_id = ba.author_id WHERE ba.book_id IN (${placeholders}) `).all(...bookIds);
+        const authorsMap = {};
+        for (const row of authorRows) {
+            if (!authorsMap[row.book_id]) authorsMap[row.book_id] = []; authorsMap[row.book_id].push(row);
+        }
+
+        // =========================
+        // GENRES (batch)
+        // =========================
+        const genreRows = db.prepare(`SELECT bg.book_id, g.* FROM BookGenres bg JOIN Genres g ON g.genre_id = bg.genre_id WHERE bg.book_id IN (${placeholders}) `).all(...bookIds);
+        const genresMap = {};
+        for (const row of genreRows) {
+            if (!genresMap[row.book_id]) genresMap[row.book_id] = []; genresMap[row.book_id].push(row);
+        }
+
+        // =========================
+        // SERIES (batch)
+        // =========================
+        const seriesRows = db.prepare(`SELECT bs.book_id, s.*, bs.sequence_number FROM BookSeries bs JOIN Series s ON s.serie_id = bs.serie_id WHERE bs.book_id IN (${placeholders}) `).all(...bookIds);
+        const seriesMap = {};
+        for (const row of seriesRows) {
+            if (!seriesMap[row.book_id]) seriesMap[row.book_id] = []; seriesMap[row.book_id].push(row);
+        }
+
     
         return books.map(book => {
-            const a = getAuthors.all(book.book_id);
-            const g = getGenres.all(book.book_id);
-            const s = getSeries.all(book.book_id);
+	    const a = authorsMap[book.book_id] || [];
+	    const g = genresMap[book.book_id] || [];
+	    const s = seriesMap[book.book_id] || [];
     
             return {
                 ...book,

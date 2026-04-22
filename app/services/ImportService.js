@@ -323,6 +323,8 @@ function importBooks() {
     const totalStart = Date.now();
    
     for (const file of files) {
+        Log(`------------------------------------------------------------------`);
+        Log("\n");
         const bookStart = Date.now();
         try {
             index++;
@@ -401,6 +403,7 @@ function importBooks() {
             deleted++;
 
             Log(`${index}/${total}.DONE in ${Date.now() - bookStart}ms`);
+            Log("\n");
 
         } catch (e) {
             Log(`FAILED: ${file} -> ${e.message}`);
