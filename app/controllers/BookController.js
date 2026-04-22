@@ -9,10 +9,7 @@ const { paginate } = require("../../core/pagination");
 class BookController {
 
     static async index(req, res) {
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        const page = parseInt(url.searchParams.get("page") || "1", 10);
-        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const result = BookModel.getAll(page, limit);
+        const result = BookModel.getAll(req);
         return respond( req, res, "Books", result.data, true, BOOK_COLUMNS.hidden, result.pagination );
     }
     static async show(req, res, params) {

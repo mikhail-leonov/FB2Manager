@@ -4,7 +4,10 @@ const { pagedQuery } = require("../../core/dbpagination");
 
 class GenreModel {
 
-    static getAll(page = 1, limit = 20) {
+    static getAll(req) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
 	return pagedQuery({ table: "Genres", page, limit });
     }
     static getById(id) {

@@ -8,27 +8,12 @@ const { GENRE_COLUMNS } = require("../services/tableColumns");
 class GenreController {
 
     static async index(req, res) {
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        const page = parseInt(url.searchParams.get("page") || "1", 10);
-        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-
-        const result = GenreModel.getAll(page, limit);
-
-        return respond(
-            req,
-            res,
-            "Genres",
-            result.data,
-            true,
-            GENRE_COLUMNS.hidden,
-            result.pagination
-        );
+        const result = GenreModel.getAll(req);
+        return respond( req, res, "Genres", result.data, true, GENRE_COLUMNS.hidden, result.pagination );
     }
-
     static async show(req, res, params) {
         const data = GenreModel.getById(params.id);
         if (!data) return error(res, "Genre not found", 404);
-
         return respond(req, res, `Genre: ${params.id}`, data, false, GENRE_COLUMNS.hidden);
     }
 
