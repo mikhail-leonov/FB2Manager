@@ -324,8 +324,8 @@ function importBooks() {
    
     for (const file of files) {
         Log(`------------------------------------------------------------------`);
-        Log(`${file}`);
-        Log(`${index}/${total}`);
+        Log(`File: ${file}`);
+        Log(`Index: ${index}/${total}`);
 
         const bookStart = Date.now();
         try {
@@ -411,6 +411,7 @@ function importBooks() {
             }
 
             Log(`Time: ${Date.now() - bookStart}ms`);
+            Log("\n");
 
             fs.unlinkSync(file);
             deleted++;
