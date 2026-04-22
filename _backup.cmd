@@ -17,25 +17,3 @@ echo.
 :: ---- Backup  ----
 tar -a -c -f "%ZIPNAME%" *.md *.cmd *.json server.js js\* sql\* app\* views\* core\* 
 
-
-:: ---- Git backup section ----
-cd /d "%~dp0"
-
-git config --global user.email "mikecommon@gmail.com"
-git config --global user.name "Mihail Leonov"
-
-git add *.md *.cmd *.json server.js js\* sql\* app\* views\* core\*
-
-
-
-git diff --cached --quiet
-if errorlevel 1 (
-    echo Changes detected. Committing...
-
-    git commit -m "Auto backup %TS%"
-    git push origin master
-
-    echo Git push completed.
-) else (
-    echo No changes to commit.
-)
