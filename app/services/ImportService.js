@@ -219,6 +219,7 @@ async function importBooks(onLog) {
     let total = files.length;
     let kbPerMs = 0;
     let msPerKB = 0;
+    let totalSize = 0;
 
     const encodingStats = new Set();
     const languageStats = new Set();
@@ -237,6 +238,7 @@ async function importBooks(onLog) {
         Log(`File: ${file}`);
 
         const stats = fs.statSync(file);
+	totalSize = totalSize + stats.size;
         const sizeKB = stats.size / 1024;
         const sizeMB = sizeKB / 1024;
         Log(`Size: ${sizeKB.toFixed(2)} KB (${sizeMB.toFixed(2)} MB)`);
@@ -362,9 +364,16 @@ async function importBooks(onLog) {
     for (const lng of languageStats) Log(`- ${lng}`);
     Log("\n");
 
-    const totalMs = Date.now() - totalStart;
-    const totalSec = (totalMs / 1000).toFixed(1);
+    const totalKB = totalSize / 1024;
+    const totalMB = totalKB / 1024;
+    const kbPerSecond = totalKB / (totalMs / 1000);
+    const mbPerSecond = totalMB / (totalMs / 1000);
+    const msPerTotalKB = totalMs / totalKB;
 
+    Log(`Total size: ${totalKB.toFixed(2)} KB (${totalMB.toFixed(2)} MB)`);
+    Log(`Total time: ${totalMs} ms`);
+    Log(`Average speed: ${kbPerSecond.toFixed(2)} KB/s (${mbPerSecond.toFixed(2)} MB/s)`);
+    Log(`Cost: ${msPerTotalKB.toFixed(2)} ms/KB`);
     Log(`Imported: ${imported}`);
     Log(`Skipped: ${skipped}`);
     Log(`Deleted: ${deleted}`);

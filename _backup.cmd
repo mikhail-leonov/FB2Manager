@@ -15,5 +15,5 @@ echo Creating backup: %ZIPNAME%
 echo.
 
 :: ---- Backup  ----
-tar -a -c -f "%ZIPNAME%" *.md *.cmd *.json server.js js\* sql\* app\* views\* core\* 
+tar -a -c -f "%ZIPNAME%" *.md *.cmd *.json server.js js\* css\* sql\* app\* views\* core\* 
 

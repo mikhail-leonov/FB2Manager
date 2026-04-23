@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const { FILES_DIR, FILES_PREFIX, JS_PREFIX, CONTENT_TYPE_JS, CONTENT_TYPE_HTML } = require("../core/constants");
+const { FILES_DIR, FILES_PREFIX, JS_PREFIX, CSS_PREFIX, CONTENT_TYPE_JS, CONTENT_TYPE_CSS, CONTENT_TYPE_HTML } = require("../core/constants");
 const { render } = require("../core/view");
 const { renderFb2ToHtml } = require("./services/Fb2Renderer");
 
@@ -43,6 +43,21 @@ async function router(req, res) {
         res.writeHead(404);
         return res.end("JS file not found");
     }
+    if (url.startsWith(CSS_PREFIX)) {
+
+        const base = path.join(__dirname, "..");
+        const filePath = path.normalize(path.join(base, url));
+        if (!filePath.startsWith(base)) {
+            res.writeHead(403);
+            return res.end("Forbidden");
+        }
+        if (fs.existsSync(filePath)) {
+            res.writeHead(200, { "Content-Type": CONTENT_TYPE_CSS });
+            return res.end(fs.readFileSync(filePath));
+        }
+        res.writeHead(404);
+        return res.end("JS file not found");
+    }
 
     if (url.startsWith(FILES_PREFIX)) {
         const file = url.split(FILES_PREFIX)[1];
@@ -64,6 +79,7 @@ async function router(req, res) {
 
     const routes = [
         ["GET", "/",          		HomeController.index],
+        ["GET", "/search",     		HomeController.index],
         ["GET", "/books",     		BookController.index],
         ["GET", "/import",              ImportController.run],
         ["GET", "/import-stream",       ImportController.stream],

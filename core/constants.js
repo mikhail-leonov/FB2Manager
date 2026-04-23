@@ -10,6 +10,8 @@ const ROOT = path.join(__dirname, "..");
 // DIRECTORIES
 const DB_DIR      = path.join(ROOT, "db");
 const SQL_DIR     = path.join(ROOT, "sql");
+const CSS_DIR     = path.join(ROOT, "css");
+const JS_DIR      = path.join(ROOT, "js");
 const BACKUP_DIR  = path.join(ROOT, "backup");
 const FILES_DIR   = path.join(ROOT, "files");
 const UPLOAD_DIR  = path.join(ROOT, "upload");
@@ -26,35 +28,83 @@ const AUTHORS_SEED_FILE  = path.join(SQL_DIR, "authors.sql");
 const LOG_FILE           = path.join(LOG_DIR, "logs.log");
 
 const ENCODING_MAP = {
+  
     "utf8": "utf-8",
     "utf-8": "utf-8",
     "utf 8": "utf-8",
+
+    "utf16le": "utf-16le",
+    "utf-16le": "utf-16le",
+    "utf 16le": "utf-16le",
+
     "cp1251": "windows-1251",
+    "cp-1251": "windows-1251",
+    "cp 1251": "windows-1251",
+
     "windows-1251": "windows-1251",
+    "windows1251": "windows-1251",
+    "windows 1251": "windows-1251",
+
     "win1251": "windows-1251",
-    "windows-1252": "windows-1252",
+    "win-1251": "windows-1251",
+    "win 1251": "windows-1251",
+
     "cp1252": "windows-1252",
+    "cp-1252": "windows-1252",
+    "cp 1252": "windows-1252",
+
+    "windows-1252": "windows-1252",
+    "windows1252": "windows-1252",
+    "windows 1252": "windows-1252",
+
+    "win1252": "windows-1252",
+    "win-1252": "windows-1252",
+    "win 1252": "windows-1252",
+
     "latin1": "windows-1252",
     "iso-8859-1": "windows-1252",
+
+    "cp1250": "windows-1250",
+    "cp-1250": "windows-1250",
+    "cp 1250": "windows-1250",
+
+    "windows-1250": "windows-1250",
+    "windows1250": "windows-1250",
+    "windows 1250": "windows-1250",
+
+    "win1250": "windows-1250",
+    "win-1250": "windows-1250",
+    "win 1250": "windows-1250",
+
     "iso-8859-2": "iso-8859-2",
     "latin2": "iso-8859-2",
-    "cp1250": "windows-1250",
-    "windows-1250": "windows-1250",
+
+    "iso-8859-5": "iso-8859-5",
+
     "koi8-r": "koi8-r",
     "koi8r": "koi8-r",
     "koi8-u": "koi8-u",
+
     "ibm866": "ibm866",
     "cp866": "ibm866",
     "866": "ibm866",
+
     "shift_jis": "shift_jis",
     "shift-jis": "shift_jis",
     "sjis": "shift_jis",
-    "big5": "big5",
-    "big-5": "big5",
+
+    "euc-jp": "euc-jp",
+    "eucjp": "euc-jp",
+
     "euc-kr": "euc-kr",
     "euckr": "euc-kr",
+
+    "big5": "big5",
+    "big-5": "big5",
+
     "gbk": "gbk",
     "gb2312": "gb2312",
+
     "ascii": "utf-8"
 };
 // TABLES
@@ -79,10 +129,12 @@ const ALL_TABLES = [
 // HTTP
 const CONTENT_TYPE_JSON = "application/json";
 const CONTENT_TYPE_JS   = "application/javascript";
+const CONTENT_TYPE_CSS  = "text/css";
 const CONTENT_TYPE_HTML = "text/html; charset=utf-8";
 
 // ROUTES / STATIC
 const JS_PREFIX = "/js/";
+const CSS_PREFIX = "/css/";
 const FILES_PREFIX = "/files/";
 
 // FILE TYPES
@@ -90,7 +142,7 @@ const FB2_EXTENSION = ".fb2";
 
 
 // IMPORT RULES
-const IMPORT_ALLOWED_LANGUAGES = ["en", "ru"];
+const IMPORT_ALLOWED_LANGUAGES = [ "en", "ru", "en-us", "en-gb", "русский", "ru-ru" ];
 const IMPORT_BLOCKED_LANGUAGES = null;
 
 const IMPORT_BLOCKED_ENCODINGS = null; 
@@ -126,6 +178,8 @@ module.exports = {
     UPLOAD_DIR,
     VIEWS_DIR,
     LOG_DIR,
+    CSS_DIR,
+    JS_DIR,
 
     DB_FILE,
     SCHEMA_FILE,
@@ -136,7 +190,9 @@ module.exports = {
 
     CONTENT_TYPE_JSON, 
     CONTENT_TYPE_JS, 
+    CONTENT_TYPE_CSS,
     CONTENT_TYPE_HTML,
+    CSS_PREFIX,
     JS_PREFIX,
     FILES_PREFIX,
     FB2_EXTENSION,

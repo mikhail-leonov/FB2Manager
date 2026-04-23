@@ -10,6 +10,8 @@ const {
     BACKUP_DIR,
     FILES_DIR,
     UPLOAD_DIR,
+    JS_DIR,
+    CSS_DIR,
     LOG_DIR,
     SCHEMA_FILE,
     GENRES_SEED_FILE,
@@ -18,7 +20,7 @@ const {
 } = require("./constants");
 
 function ensureFolders() {
-    [SQL_DIR, LOG_DIR, UPLOAD_DIR, DB_DIR, BACKUP_DIR, FILES_DIR].forEach(dir => {
+    [SQL_DIR, CSS_DIR, JS_DIR, LOG_DIR, UPLOAD_DIR, DB_DIR, BACKUP_DIR, FILES_DIR].forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
             console.log(`Created folder: ${dir}`);
@@ -34,9 +36,9 @@ function bootstrapDatabase() {
         db.exec(fs.readFileSync(SCHEMA_FILE, "utf-8"));
     }
 
-    if (fs.existsSync(GENRES_SEED_FILE) && !BootstrapModel.hasGenres()) {
-        console.log("Adding genres data...");
-        db.exec(fs.readFileSync(GENRES_SEED_FILE, "utf-8"));
+    if (fs.existsSync(AUTHORS_SEED_FILE) && !BootstrapModel.hasAuthors()) {
+        console.log("Adding authors data...");
+        db.exec(fs.readFileSync(AUTHORS_SEED_FILE, "utf-8"));
     }
 
     if (fs.existsSync(BOOKS_SEED_FILE) && !BootstrapModel.hasBooks()) {
@@ -44,9 +46,9 @@ function bootstrapDatabase() {
         db.exec(fs.readFileSync(BOOKS_SEED_FILE, "utf-8"));
     }
 
-    if (fs.existsSync(AUTHORS_SEED_FILE) && !BootstrapModel.hasAuthors()) {
-        console.log("Adding authors data...");
-        db.exec(fs.readFileSync(AUTHORS_SEED_FILE, "utf-8"));
+    if (fs.existsSync(GENRES_SEED_FILE) && !BootstrapModel.hasGenres()) {
+        console.log("Adding genres data...");
+        db.exec(fs.readFileSync(GENRES_SEED_FILE, "utf-8"));
     }
 }
 
