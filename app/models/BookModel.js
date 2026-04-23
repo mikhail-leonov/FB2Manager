@@ -4,6 +4,7 @@ const {
     makeBookLink,
     makeAuthorLink,
     makeGenreLink,
+    makeDownloadLink,
     makeSeriesLink,
     makeFileLink
 } = require("../services/Link");
@@ -102,6 +103,8 @@ class BookModel {
             return {
                 ...b,
                 Title: makeFileLink(b),
+                Download: makeDownloadLink(b),
+                Meta: makeFileLink(b),
                 Authors: a.map(makeAuthorLink).join(", "),
                 Genres: g.map(makeGenreLink).join(", "),
                 Serie: s.map(x => {

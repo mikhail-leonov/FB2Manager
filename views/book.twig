@@ -6,11 +6,39 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   <link href="/css/style.css" rel="stylesheet">
+  <style>
+    .terminal-wrap {
+        min-height: 700px; 
+    }
+    #logBox {
+      height: 680px;
+    }
+    .log-line {
+      font-size: 1.2rem;
+    }
+  </style>
 </head>
 <body>
   <div class="topbar">
     <a href="/" class="active">Home</a>
   </div>
-  {{ content|raw }}
+
+  <!-- Terminal log -->
+  <div class="terminal-wrap">
+    <div class="terminal-header">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <span class="terminal-title">Read {{ title }}</span>
+    </div>
+    <div id="logBox">
+      <span style="color:#2a3a2a">
+        {{ content|raw }} 
+      </span>
+    </div>
+  </div>
+
+
+  
 </body>
 </html>

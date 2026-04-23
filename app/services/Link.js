@@ -1,9 +1,13 @@
-function makeBookLink(link) {
-    return `<a href="/book/${link.book_id}">${link.title}</a>`;
-}
-
 function makeFileLink(link) {
     return `<a href="/files/${link.hash}">${link.title}</a>`;
+}
+
+function makeDownloadLink(link) {
+    return `<a href="/files/${link.hash}.fb2" download="${link.title}.fb2">fb2</a>`;
+}
+
+function makeBookLink(link) {
+    return `<a href="/book/${link.book_id}">${link.title}</a>`;
 }
 
 function makeAuthorLink(link) {
@@ -24,5 +28,6 @@ module.exports = {
     makeFileLink,
     makeAuthorLink,
     makeGenreLink,
+    makeDownloadLink,
     makeSeriesLink
 };

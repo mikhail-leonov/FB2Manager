@@ -1,4 +1,5 @@
 function renderTable(rows, hiddenColumns = []) {
+
     if (!rows || rows.length === 0) { return "<p>No data</p>"; }
     const keys = Object.keys(rows[0]).filter(k => !hiddenColumns.includes(k));
     let html = "<table class='table'>";

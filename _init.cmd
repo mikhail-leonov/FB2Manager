@@ -4,7 +4,7 @@ SETLOCAL EnableDelayedExpansion
 :: --- Configuration ---
 :: Since we are already inside the dir, we just set a label for the echo
 SET "PROJECT_LABEL=Books"
-SET "NODE_PACKAGES=better-sqlite3@^12.8.0 chardet@^2.1.1 fast-xml-parser@^5.7.1 iconv-lite@^0.7.2 twig@^3.0.0"
+SET "NODE_PACKAGES=better-sqlite3@^12.8.0 chardet@^2.1.1 fast-xml-parser@^5.7.1 iconv-lite@^0.7.2 twig@^3.0.0 adm-zip@^0.5.17"
 SET "REPO_URL=https://github.com/mikhail-leonov/FB2Manager"
 
 echo ====================================================
@@ -102,6 +102,10 @@ if %ERRORLEVEL% EQU 0 (
 echo [+] Creating .gitignore...
 (
     echo backup/
+    echo upload/
+    echo files/
+    echo logs/
+    echo books/
     echo node_modules/
     echo upload/
     echo package-lock.json

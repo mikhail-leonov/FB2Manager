@@ -6,7 +6,7 @@ if exist %OUTPUT% del %OUTPUT%
 
 call :processDir app
 call :processDir core
-call :processDir views
+REM call :processDir views
 REM call :processDir sql
 REM call :processDir js
 
