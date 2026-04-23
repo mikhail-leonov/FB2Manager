@@ -18,9 +18,12 @@ const BookSerieModel = require("../models/BookSerieModel");
 const GenreModel = require("../models/GenreModel");
 const BookGenreModel = require("../models/BookGenreModel");
 
+const BooksFTSModel = require("../models/BooksFTSModel");
+
 const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
 
 const { LOG_FILE } = require("../../core/constants");
+const { preprocess } = require("../services/TextPreprocessor");
 
 const {
     IMPORT_ALLOWED_LANGUAGES,
@@ -284,10 +287,13 @@ async function importBooks(onLog) {
             }
 
             BookModel.create(book);
+            BooksFTSModel.insert(created);
+
             existing.add(book.hash);
             imported++;
 
             Log(`Resolution: IMPORTED`);
+
 
             if (parsed.authors.length > 0) {
                 for (const a of parsed.authors) {

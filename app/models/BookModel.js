@@ -1,6 +1,7 @@
 const db = require("../../core/db");
 const { paginate } = require("../../core/pagination");
 const { pagedQuery } = require("../../core/dbpagination");
+const { buildSearchQuery } = require("../services/SearchQueryBuilder");
 
 const {
     makeBookLink,
@@ -39,33 +40,53 @@ class BookModel {
 
         return this.populateBooks(rows);
     }
+
     static search(req, query) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const q = url.searchParams.get("q") || "";
+           const q = (url.searchParams.get("q") || "").trim();
+    
+        const ftsQuery = buildSearchQuery(q);
+    
+        const totalResult = db.prepare(`
+            SELECT COUNT(DISTINCT rowid) AS c
+            FROM BooksFTS
+            WHERE BooksFTS MATCH ?
+        `).get(ftsQuery);
     
         const pagination = paginate({
             page,
             limit,
-            total: db.prepare(`
-                SELECT COUNT(DISTINCT rowid) AS c FROM BooksFTS WHERE BooksFTS MATCH ?
-            `).get(q).c
+            total: totalResult?.c || 0
         });
     
         const rowids = db.prepare(`
-            SELECT DISTINCT rowid FROM BooksFTS
+            SELECT DISTINCT rowid
+            FROM BooksFTS
             WHERE BooksFTS MATCH ?
             LIMIT ? OFFSET ?
-        `).all(q, pagination.limit, pagination.offset).map(r => r.rowid);
+        `).all(ftsQuery, pagination.limit, pagination.offset)
+        .map(r => r.rowid);
     
-        if (!rowids.length) return { data: [], pagination };
+        if (!rowids.length) {
+            return { data: [], pagination };
+        }
     
         const ph = rowids.map(() => "?").join(",");
-        const books = db.prepare(`SELECT book_id FROM Books WHERE rowid IN (${ph})`).all(...rowids);
+    
+        const books = db.prepare(`
+            SELECT book_id
+            FROM Books
+            WHERE rowid IN (${ph})
+        `).all(...rowids);
+    
         const ids = books.map(b => b.book_id);
     
-        return { data: this.getByIds(ids), pagination };
+        return {
+            data: this.getByIds(ids),
+            pagination
+        };
     }
 
     static create(book) {
