@@ -5,6 +5,7 @@ const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
 const { BOOK_COLUMNS } = require("../services/tableColumns");
 const { paginate } = require("../../core/pagination");
+const { renderBookPage } = require("../renders/BookRender");
 
 class BookController {
 
@@ -13,9 +14,11 @@ class BookController {
         return respond( req, res, "Books", result.data, true, BOOK_COLUMNS.hidden, result.pagination );
     }
     static async show(req, res, params) {
-        const data = BookModel.getById(params.id);
-        if (!data) { return error(res, "Book not found", 404); }
-        return respond(req, res, `Book: ${params.id}`, data, false, BOOK_COLUMNS.hidden );
+        const book = BookModel.getById(params.id);
+        if (!book) {
+            return error(res, "Book not found", 404);
+        }
+        return renderBookPage(res, book);
     }
 }
 

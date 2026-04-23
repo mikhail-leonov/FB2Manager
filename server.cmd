@@ -1,3 +1,4 @@
+@echo off
 echo Stopping server.cmd...
 
 REM Kill all cmd processes running server.cmd

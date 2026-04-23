@@ -119,25 +119,3 @@ CREATE INDEX IF NOT EXISTS idx_bookseries_series ON BookSeries(serie_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS BooksFTS USING fts5(
     title, annotation, content='Books', content_rowid='rowid', tokenize = 'unicode61'
 );
-
--- =========================
--- FTS5 TRIGGERS (SYNC)
--- =========================
-CREATE TRIGGER IF NOT EXISTS books_ai AFTER INSERT ON Books BEGIN
-    INSERT INTO BooksFTS(rowid, title, annotation)
-    VALUES (new.rowid, new.title, COALESCE(new.annotation, ''));
-END;
-
-CREATE TRIGGER IF NOT EXISTS books_ad AFTER DELETE ON Books BEGIN
-    INSERT INTO BooksFTS(BooksFTS, rowid, title, annotation)
-    VALUES ('delete', old.rowid, old.title, COALESCE(old.annotation, ''));
-END;
-
-CREATE TRIGGER IF NOT EXISTS books_au AFTER UPDATE ON Books BEGIN
-    INSERT INTO BooksFTS(BooksFTS, rowid)
-    VALUES ('delete', old.rowid);
-
-    INSERT INTO BooksFTS(rowid, title, annotation)
-    VALUES (new.rowid, new.title, COALESCE(new.annotation, ''));
-END;
-

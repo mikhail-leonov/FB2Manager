@@ -3,7 +3,7 @@ const router = require("./app/routes");
 const { bootstrapDatabase } = require("./core/bootstrap");
 
 const PORT = 3000;
-const VERSION = "0.1.11";
+const VERSION = "0.1.14";
 
 bootstrapDatabase();
 

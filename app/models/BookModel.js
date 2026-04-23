@@ -148,7 +148,7 @@ class BookModel {
                 ...b,
                 Title: makeFileLink(b),
                 Download: makeDownloadLink(b),
-                Meta: makeFileLink(b),
+                Meta: makeBookLink(b),
                 Authors: a.map(makeAuthorLink).join(", "),
                 Genres: g.map(makeGenreLink).join(", "),
                 Serie: s.map(x => {

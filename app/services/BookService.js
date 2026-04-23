@@ -1,5 +1,5 @@
-const db = require("./db");
-const { preprocess } = require("./TextPreprocessor");
+const db = require("../../core/db");
+const { preprocess } = require("../services/TextPreprocessor");
 
 /**
  * Insert a book into DB + FTS index

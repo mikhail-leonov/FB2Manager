@@ -13,11 +13,18 @@ const {
     JS_DIR,
     CSS_DIR,
     LOG_DIR,
+    LOG_FILE,
     SCHEMA_FILE,
     GENRES_SEED_FILE,
     BOOKS_SEED_FILE,
     AUTHORS_SEED_FILE
 } = require("./constants");
+
+function countInsertStatements(filePath) {
+    const sql = fs.readFileSync(filePath, "utf8");
+    const matches = sql.match(/INSERT\s+(OR\s+\w+\s+)?INTO/gi);
+    return matches ? matches.length : 0;
+}
 
 function ensureFolders() {
     [SQL_DIR, CSS_DIR, JS_DIR, LOG_DIR, UPLOAD_DIR, DB_DIR, BACKUP_DIR, FILES_DIR].forEach(dir => {
@@ -31,23 +38,31 @@ function ensureFolders() {
 function bootstrapDatabase() {
     ensureFolders();
 
+    if (fs.existsSync(LOG_FILE)) {
+        fs.writeFileSync(LOG_FILE, "");
+        console.log(`Log file cleared: ${LOG_FILE}`);
+    }
+
     if (fs.existsSync(SCHEMA_FILE) && !BootstrapModel.hasFullSchema()) {
         console.log("Initializing schema...");
         db.exec(fs.readFileSync(SCHEMA_FILE, "utf-8"));
     }
 
     if (fs.existsSync(AUTHORS_SEED_FILE) && !BootstrapModel.hasAuthors()) {
-        console.log("Adding authors data...");
+        const n = countInsertStatements(AUTHORS_SEED_FILE);
+        console.log(`Adding ${n} author(s)...`);
         db.exec(fs.readFileSync(AUTHORS_SEED_FILE, "utf-8"));
     }
 
     if (fs.existsSync(BOOKS_SEED_FILE) && !BootstrapModel.hasBooks()) {
-        console.log("Adding books data...");
+        const n = countInsertStatements(BOOKS_SEED_FILE);
+        console.log(`Adding ${n} book(s)...`);
         db.exec(fs.readFileSync(BOOKS_SEED_FILE, "utf-8"));
     }
 
     if (fs.existsSync(GENRES_SEED_FILE) && !BootstrapModel.hasGenres()) {
-        console.log("Adding genres data...");
+        const n = countInsertStatements(GENRES_SEED_FILE);
+        console.log(`Adding ${n} genre(s)...`);
         db.exec(fs.readFileSync(GENRES_SEED_FILE, "utf-8"));
     }
 }

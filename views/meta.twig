@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book — FB2 Collection</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+  <style>
+    .terminal-wrap { min-height: 700px;  }
+    #logBox { height: 680px; }
+    .log-line { font-size: 1.2rem; }
+  </style>
+
+</head>
+
+<body style="background:#000; color:var(--text);">
+
+  <div class="topbar">
+    <a href="/">← Home</a>
+  </div>
+
+  <div class="page-header">
+    <h1>FB2 <span>Book</span></h1>
+  </div>
+
+  <div class="terminal-wrap">
+    <div class="terminal-header">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <span class="terminal-title">Read {{ title }}</span>
+    </div>
+
+    <div class="card mb-4 bg-dark text-light border-secondary">
+      <div class="card-body">
+
+        <table class="table table-sm table-bordered mb-0">
+          <tbody>
+
+            <tr>
+              <th>Book ID</th>
+              <td>{{ book.book_id }}</td>
+            </tr>
+
+            <tr>
+              <th>Hash</th>
+              <td>{{ book.hash }}</td>
+            </tr>
+
+            <tr>
+              <th>Language</th>
+              <td>{{ book.language }}</td>
+            </tr>
+
+            <tr>
+              <th>Authors</th>
+              <td>{{ book.Authors | raw }}</td>
+            </tr>
+
+            <tr>
+              <th>Genres</th>
+              <td>{{ book.Genres | raw }}</td>
+            </tr>
+
+            <tr>
+              <th>Series</th>
+              <td>{{ book.Serie | raw }}</td>
+            </tr>
+
+            <tr>
+              <th>Publication</th>
+              <td>{{ book.publication_date }}</td>
+            </tr>
+
+            <tr>
+              <th>Action</th>
+              <td>
+                [ 
+                <a class="btn-outline-secondary" href="/files/{{ book.hash }}" >Read</a>
+                | 
+                <a class="btn-outline-secondary" href="/files/{{ book.hash }}.fb2" download>Download</a>
+                ]
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+    <div class="card bg-dark text-light border-secondary">
+      <div class="card-header">
+        Annotation
+      </div>
+      <div class="card-body">
+        {{ book.annotation }}
+      </div>
+    </div>
+
+  </div>
+
+
+</body>
+</html>

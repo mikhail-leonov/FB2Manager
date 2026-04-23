@@ -5,7 +5,6 @@ function makeFileLink(link) {
 function makeDownloadLink(link) {
     return `<a href="/files/${link.hash}.fb2" download="${link.title}.fb2">fb2</a>`;
 }
-
 function makeBookLink(link) {
     return `<a href="/book/${link.book_id}">${link.title}</a>`;
 }

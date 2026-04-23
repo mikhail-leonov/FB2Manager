@@ -286,8 +286,12 @@ async function importBooks(onLog) {
                 continue;
             }
 
-            BookModel.create(book);
-            BooksFTSModel.insert(created);
+ 	    const created = BookModel.create(book);
+	    BooksFTSModel.insert({
+		rowid: created.lastInsertRowid,
+		title: book.title,
+		annotation: book.annotation
+	    });
 
             existing.add(book.hash);
             imported++;
@@ -319,7 +323,11 @@ async function importBooks(onLog) {
                 }
             }
 
-            const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
+            const subDir = book.hash.slice(0, 2); 
+            const dirPath = path.join(FILES_DIR, subDir);
+            fs.mkdirSync(dirPath, { recursive: true });
+
+            const dest = path.join(dirPath, `${book.hash}.fb2`);
             Log(`Copy file to: ${dest}`);
 
             try {
@@ -369,6 +377,9 @@ async function importBooks(onLog) {
     Log(`Languages:`);
     for (const lng of languageStats) Log(`- ${lng}`);
     Log("\n");
+
+    const totalMs = Date.now() - totalStart;
+    const totalSec = (totalMs / 1000).toFixed(2);
 
     const totalKB = totalSize / 1024;
     const totalMB = totalKB / 1024;

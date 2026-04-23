@@ -6,43 +6,21 @@ class BooksFTSModel {
     static insert(book) {
         const title = preprocess(book.title);
         const annotation = preprocess(book.annotation);
-
-        db.prepare(`
-            INSERT INTO BooksFTS (rowid, title, annotation)
-            VALUES (?, ?, ?)
-        `).run(book.book_id, title, annotation);
+        db.prepare(`INSERT INTO BooksFTS (rowid, title, annotation) VALUES (?, ?, ?) `).run(book.rowid, title, annotation);
     }
-
     static update(book) {
-        const title = preprocess(book.title);
-        const annotation = preprocess(book.annotation);
-
-        db.prepare(`
-            DELETE FROM BooksFTS WHERE rowid = ?
-        `).run(book.book_id);
-
-        db.prepare(`
-            INSERT INTO BooksFTS (rowid, title, annotation)
-            VALUES (?, ?, ?)
-        `).run(book.book_id, title, annotation);
+        this.remove(book.book_id);  
+        this.insert(book);
     }
-
     static remove(bookId) {
-        db.prepare(`
-            DELETE FROM BooksFTS WHERE rowid = ?
-        `).run(bookId);
+        db.prepare(`DELETE FROM BooksFTS WHERE rowid = ?`).run(bookId);
     }
-
+    static removeAll() {
+        db.prepare(`DELETE FROM BooksFTS`).run();
+    }
     static rebuildFromBooks(books) {
-        const insert = db.prepare(`
-            INSERT INTO BooksFTS (rowid, title, annotation)
-            VALUES (?, ?, ?)
-        `);
-
-        const deleteAll = db.prepare(`DELETE FROM BooksFTS`);
-
-        deleteAll.run();
-
+        this.removeAll();
+        const insert = db.prepare(`INSERT INTO BooksFTS (rowid, title, annotation) VALUES (?, ?, ?) `);
         const tx = db.transaction((list) => {
             for (const book of list) {
                 insert.run(
@@ -52,7 +30,6 @@ class BooksFTSModel {
                 );
             }
         });
-
         tx(books);
     }
 }
