@@ -117,7 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_bookseries_series ON BookSeries(serie_id);
 -- FTS5 FULL-TEXT SEARCH
 -- =========================
 CREATE VIRTUAL TABLE IF NOT EXISTS BooksFTS USING fts5(
-    title, annotation, content='Books', content_rowid='rowid'
+    title, annotation, content='Books', content_rowid='rowid', tokenize = 'unicode61'
 );
 
 -- =========================

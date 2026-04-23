@@ -1,5 +1,7 @@
 const db = require("../../core/db");
+const { paginate } = require("../../core/pagination");
 const { pagedQuery } = require("../../core/dbpagination");
+
 const {
     makeBookLink,
     makeAuthorLink,
@@ -41,10 +43,31 @@ class BookModel {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const result = pagedQuery({ table: "BooksFTS", select: "rowid, bm25(BooksFTS) AS score", where: "BooksFTS MATCH ?", params: [query], page, limit, orderBy: "score ASC" });
-        const ids = result.data.map(r => r.rowid);
-        return { data: this.getByIds(ids), pagination: result.pagination };
+        const q = url.searchParams.get("q") || "";
+    
+        const pagination = paginate({
+            page,
+            limit,
+            total: db.prepare(`
+                SELECT COUNT(DISTINCT rowid) AS c FROM BooksFTS WHERE BooksFTS MATCH ?
+            `).get(q).c
+        });
+    
+        const rowids = db.prepare(`
+            SELECT DISTINCT rowid FROM BooksFTS
+            WHERE BooksFTS MATCH ?
+            LIMIT ? OFFSET ?
+        `).all(q, pagination.limit, pagination.offset).map(r => r.rowid);
+    
+        if (!rowids.length) return { data: [], pagination };
+    
+        const ph = rowids.map(() => "?").join(",");
+        const books = db.prepare(`SELECT book_id FROM Books WHERE rowid IN (${ph})`).all(...rowids);
+        const ids = books.map(b => b.book_id);
+    
+        return { data: this.getByIds(ids), pagination };
     }
+
     static create(book) {
         const stmt = db.prepare(`INSERT INTO Books ( book_id,title,language,annotation,publication_date,hash ) VALUES (?, ?, ?, ?, ?, ?)`);
         return stmt.run( book.book_id, book.title, book.language, book.annotation, book.publication_date, book.hash );

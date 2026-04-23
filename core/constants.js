@@ -139,6 +139,7 @@ const FILES_PREFIX = "/files/";
 
 // FILE TYPES
 const FB2_EXTENSION = ".fb2";
+const ZIP_EXTENSION = ".zip";
 
 
 // IMPORT RULES
@@ -196,6 +197,7 @@ module.exports = {
     JS_PREFIX,
     FILES_PREFIX,
     FB2_EXTENSION,
+    ZIP_EXTENSION,
 
     TABLE_BOOKS,
     TABLE_AUTHORS,

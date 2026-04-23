@@ -107,7 +107,6 @@ echo [+] Creating .gitignore...
     echo logs/
     echo books/
     echo node_modules/
-    echo upload/
     echo package-lock.json
     echo package.json
 ) > .gitignore
