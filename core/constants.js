@@ -115,6 +115,7 @@ const TABLE_SERIES       = "Series";
 const TABLE_BOOK_AUTHORS = "BookAuthors";
 const TABLE_BOOK_GENRES  = "BookGenres";
 const TABLE_BOOK_SERIES  = "BookSeries";
+const TABLE_LIKES = "Likes";
 
 const ALL_TABLES = [
     TABLE_BOOKS,
@@ -123,7 +124,8 @@ const ALL_TABLES = [
     TABLE_SERIES,
     TABLE_BOOK_AUTHORS,
     TABLE_BOOK_GENRES,
-    TABLE_BOOK_SERIES
+    TABLE_BOOK_SERIES,
+    TABLE_LIKES
 ];
 
 // HTTP

@@ -43,7 +43,9 @@ const parser = new XMLParser({
 });
 
 function hashFile(buffer) {
-    return crypto.createHash("sha256").update(buffer).digest("hex");
+    const hash = crypto.createHash("sha256").update(buffer).digest("hex");
+    const subdir = hash.slice(0, 2);
+    return `${subdir}/${hash}`;
 }
 
 function extractAuthors(json) {
@@ -251,6 +253,7 @@ async function importBooks(onLog) {
             index++;
             const parsed = parseBook(file);
             const book = parsed.book;
+
             Log(`Encoding: ${parsed.encoding}`);
 
             encodingStats.add(parsed.encoding);
@@ -323,11 +326,8 @@ async function importBooks(onLog) {
                 }
             }
 
-            const subDir = book.hash.slice(0, 2); 
-            const dirPath = path.join(FILES_DIR, subDir);
-            fs.mkdirSync(dirPath, { recursive: true });
-
-            const dest = path.join(dirPath, `${book.hash}.fb2`);
+            const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
+            fs.mkdirSync(path.dirname(dest), { recursive: true });
             Log(`Copy file to: ${dest}`);
 
             try {

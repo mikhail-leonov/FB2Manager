@@ -5,9 +5,9 @@ set OUTPUT=1
 if exist %OUTPUT% del %OUTPUT%
 
 call :processDir app
-REM call :processDir core
+call :processDir core
 REM call :processDir views
-REM call :processDir sql
+call :processDir sql
 REM call :processDir js
 
 echo Done

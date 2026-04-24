@@ -12,6 +12,8 @@ const DbController = require("./controllers/DbController");
 const AuthorController = require("./controllers/AuthorController");
 const GenreController = require("./controllers/GenreController");
 const SerieController = require("./controllers/SerieController");
+const DebugController = require("./controllers/DebugController");
+const LikeController = require("./controllers/LikeController");
 
 function match(url, route) {
     const params = {};
@@ -97,6 +99,11 @@ async function router(req, res) {
         ["GET", "/serie/:id", 		SerieController.show],
         ["GET", "/serie/:id/books", 	SerieController.books],
 
+        ["GET", "/like/like/:id/:uid",  LikeController.like],
+        ["GET", "/like/unlike/:id/:uid",LikeController.unlike],
+        ["GET", "/like/status/:id/:uid",LikeController.status],
+
+        ["GET", "/debug",      		DebugController.index],
         ["GET", "/db",        		DbController.dump],
         ["GET", "/db/:name",  		DbController.table],
         ["GET", "/db-stats",  		DbController.stats],

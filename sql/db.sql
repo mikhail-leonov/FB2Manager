@@ -91,6 +91,23 @@ CREATE TABLE IF NOT EXISTS BookSeries (
 );
 
 -- =========================
+-- LIKES
+-- =========================
+
+CREATE TABLE IF NOT EXISTS Likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id VARCHAR(32) NOT NULL,
+    
+    UNIQUE(book_id),
+    
+    FOREIGN KEY (book_id)
+        REFERENCES Books(book_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+
+-- =========================
 -- INDEXES (BOOKS + LOOKUPS)
 -- =========================
 
@@ -98,6 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_books_title ON Books(title);
 CREATE INDEX IF NOT EXISTS idx_authors_name ON Authors(lastname, middlename, firstname);
 CREATE INDEX IF NOT EXISTS idx_genre_title ON Genres(title);
 CREATE INDEX IF NOT EXISTS idx_serie_title ON Series(title);
+
 
 -- =========================
 -- FK PERFORMANCE INDEXES
@@ -112,6 +130,7 @@ CREATE INDEX IF NOT EXISTS idx_bookgenres_genre ON BookGenres(genre_id);
 CREATE INDEX IF NOT EXISTS idx_bookseries_book ON BookSeries(book_id);
 CREATE INDEX IF NOT EXISTS idx_bookseries_series ON BookSeries(serie_id);
 
+CREATE INDEX IF NOT EXISTS idx_likes_book ON Likes(book_id);
 
 -- =========================
 -- FTS5 FULL-TEXT SEARCH

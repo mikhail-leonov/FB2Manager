@@ -1,0 +1,226 @@
+<!-- D:\Projects\Books\views\debug.twig -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FB2 Collection</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+  <style>
+    .terminal-wrap { min-height: 700px; }
+    #logBox { height: 680px; overflow-y: auto; }
+    .log-line { font-size: 1.2rem; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; word-break: break-word; }
+    .debug-link { cursor: pointer; transition: opacity 0.2s; }
+    .debug-link:hover { opacity: 0.7; text-decoration: underline; }
+    pre { background: #0a0a0a; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.5rem 0; color: #00ff9d; font-size: 0.9rem; }
+    .result-header { color: #ffd700; margin: 0.5rem 0 0.25rem 0; font-weight: bold; border-left: 3px solid #ffd700; padding-left: 0.75rem; }
+    .debug-table { font-size: 0.85rem; margin: 0.5rem 0; }
+    .debug-table th { color: #ffd700; background: #1a1a1a; }
+    .debug-table td { word-break: break-word; background: #0a0a0a; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>FB2 <span>Debug</span></h1>
+  <div class="nav-panel d-flex gap-2 p-2">
+    <a href="/" class="btn btn-outline-light btn-sm">Home</a>
+    <a href="/import" class="btn btn-outline-light btn-sm">Import</a>
+    <a href="/books" class="btn btn-outline-light btn-sm">Books</a>
+    <a href="/authors" class="btn btn-outline-light btn-sm">Authors</a>
+    <a href="/genres" class="btn btn-outline-light btn-sm">Genres</a>
+    <a href="/series" class="btn btn-outline-light btn-sm">Series</a>
+    <form action="/search" method="GET" class="topbar-search">
+      <input type="text" name="q" placeholder="Search..." />
+    </form>
+  </div>
+</div>
+
+<!-- Terminal log area - ALL results go here -->
+<div class="terminal-wrap">
+  <div class="terminal-header">
+    <div class="dot dot-r"></div>
+    <div class="dot dot-y"></div>
+    <div class="dot dot-g"></div>
+    <span class="terminal-title">Debug Console — Results</span>
+  </div>
+  <div id="logBox">
+
+  <div class="row">
+
+    <div class="col-3 col-md-3 col-lg-2">
+      <div class="d-flex flex-column mb-3">
+        <h5 class="text-white ps-2">Information</h5>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db-stats?json=1">Statistics</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db-schema?json=1">Schema</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db?json=1">Full Dump</a>
+
+        <br><br><h5 class="text-white ps-2">Table Data</h5>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/Books?json=1">Books</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/Authors?json=1">Authors</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/Genres?json=1">Genres</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/Series?json=1">Series</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/BookAuthors?json=1">BookAuthors</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/BookGenres?json=1">BookGenres</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/BookSeries?json=1">BookSeries</a>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db/BooksFTS?json=1">BooksFTS</a>
+
+        <br><br><h5 class="text-white ps-2">Clean</h5>
+        <a class="btn btn-dark text-white border-0 text-start ps-4 debug-link" data-url="/db-clean?json=1" >Clean Database</a>
+      </div>
+    </div>
+
+    <div class="col-9 col-md-9 col-lg-10" id="log-area">
+        <span class="log-line" style="color:#2a3a2a">// Debug console ready</span><br>
+        <span class="log-line" style="color:#2a3a2a">// Click any action from the left panel to see results here</span>
+    </div>
+
+  </div>
+
+  </div>
+</div>
+
+
+<script>
+  const logBox = document.getElementById('log-area');
+  
+  function appendToLog(content, isHtml = false) {
+    if (isHtml) {
+      const div = document.createElement('div');
+      div.innerHTML = content;
+      logBox.appendChild(div);
+    } else {
+      const span = document.createElement('span');
+      span.className = 'log-line';
+      span.innerHTML = content;
+      logBox.appendChild(span);
+      logBox.appendChild(document.createElement('br'));
+    }
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+  
+  function clearLog() {
+    logBox.innerHTML = '';
+  }
+  
+  function formatTableData(data, tableName) {
+    if (!Array.isArray(data) || data.length === 0) {
+      return '<div class="log-line">[info] No data found in ' + tableName + '</div>';
+    }
+    
+    let html = '<div style="overflow-x: auto;">';
+    html += '<table class="table table-sm table-bordered debug-table">';
+    
+    // Headers
+    const keys = Object.keys(data[0]);
+    html += '<thead><tr>';
+    keys.forEach(key => {
+      html += `<th>${escapeHtml(key)}</th>`;
+    });
+    html += '</thead><tbody>';
+    
+    // Rows
+    data.forEach(row => {
+      html += '<tr>';
+      keys.forEach(key => {
+        let val = row[key];
+        if (val === null) val = '<em style="color:#666;">null</em>';
+        else if (typeof val === 'object') val = JSON.stringify(val);
+        else val = escapeHtml(String(val));
+        html += `<td>${val}</td>`;
+      });
+      html += '</tr>';
+    });
+    
+    html += '</tbody></div>';
+    html += `<div class="log-line">[ok] ${data.length} row(s) returned</div>`;
+    return html;
+  }
+  
+  function formatJsonData(data) {
+    return '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+  }
+  
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+  }
+  
+  async function fetchDebugData(url, isClean = false) {
+    // Clear previous results
+    clearLog();
+    
+    // Add request header
+    appendToLog('----------------------------------------------------------------------');
+    appendToLog(`[request] ${url}`);
+    appendToLog(`[time] ${new Date().toLocaleString()}`);
+    appendToLog('');
+    
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Handle clean operation
+      if (isClean && data.cleaned) {
+        appendToLog('[warning] DANGER ZONE');
+        appendToLog('[ok] Database cleaned successfully');
+        appendToLog('[info] All data has been removed from all tables');
+        appendToLog('[info] You can now re-import books via the Import page');
+      }
+      // Handle table data (array of objects with multiple rows)
+      else if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+        const tableName = url.split('/').pop();
+        const tableHtml = formatTableData(data, tableName);
+        appendToLog(tableHtml, true);
+      }
+      // Handle other JSON data
+      else {
+        const formatted = formatJsonData(data);
+        appendToLog(formatted, true);
+      }
+      
+      appendToLog('');
+      appendToLog('[ok] Request completed successfully');
+      
+    } catch (error) {
+      appendToLog(`[error] ${error.message}`);
+      appendToLog(`[info] Could not load data from ${url}`);
+    }
+    
+    appendToLog('----------------------------------------------------------------------');
+    appendToLog('');
+  }
+  
+  // Attach click handlers to all debug links
+  document.querySelectorAll('.debug-link').forEach(link => {
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const url = link.getAttribute('data-url');
+      const confirmMsg = link.getAttribute('data-confirm');
+      
+      if (confirmMsg) {
+        if (confirm(confirmMsg)) {
+          await fetchDebugData(url, true);
+        } else {
+          clearLog();
+          appendToLog(`[warning] Action cancelled: ${url}`);
+          appendToLog(`[info] Clean operation was aborted by user`);
+        }
+      } else {
+        await fetchDebugData(url, false);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
