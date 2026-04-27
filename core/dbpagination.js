@@ -1,12 +1,13 @@
 const db = require("./db");
 const { paginate } = require("./pagination");
+const {BOOKS_PER_PAGE} = require("./constants");
 
 function pagedQuery({
     table,
     select = "*",
     orderBy = "rowid DESC",
     page = 1,
-    limit = 20,
+    limit = BOOKS_PER_PAGE,
     where = "",
     params = []
 }) {

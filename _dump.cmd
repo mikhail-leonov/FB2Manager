@@ -6,9 +6,9 @@ if exist %OUTPUT% del %OUTPUT%
 
 call :processDir app
 call :processDir core
-REM call :processDir views
+call :processDir views
 call :processDir sql
-REM call :processDir js
+call :processDir js
 
 echo Done
 exit /b

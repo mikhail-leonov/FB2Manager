@@ -30,7 +30,7 @@ async function respond(
 
     let content =
         (isTableData && isTable)
-            ? renderTable(data, hiddenColumns)
+            ? renderTable(data, hiddenColumns, url)  // Pass url for sorting
             : renderJson(data);
 
     const html = await render("page.twig", {
@@ -40,7 +40,9 @@ async function respond(
         page: pagination?.page || 1,
         limit: pagination?.limit || null,
         hasNext: pagination?.hasNext || false,
-        hasPrev: pagination?.hasPrev || false
+        hasPrev: pagination?.hasPrev || false,
+        sort: url.searchParams.get("sort") || "",
+        order: url.searchParams.get("order") || ""
     });
 
     res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });

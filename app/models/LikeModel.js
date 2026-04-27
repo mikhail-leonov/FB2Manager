@@ -3,24 +3,27 @@ const db = require("../../core/db");
 class LikeModel {
     
     static isLiked(book_id) {
-        const result = db.prepare("SELECT 1 FROM Likes WHERE book_id = ?").get(book_id);
-        return !!result;
+        return db.prepare(`SELECT COUNT(*) AS c FROM Likes WHERE book_id = ?`).get(book_id).c > 0;
     }
     static like(book_id) {
+        let result;
         try {
-            return db.prepare(`INSERT OR IGNORE INTO Likes (book_id) VALUES (?) `).run(book_id);
+            result = db.prepare(`INSERT OR IGNORE INTO Likes (book_id) VALUES (?)`).run(book_id);
         } catch (e) {
             console.error("Error liking book:", e);
-            return null;
+            result = null;
         }
+	return result;
     }
     static unlike(book_id) {
+        let result;
         try {
-            return db.prepare(`DELETE FROM Likes WHERE book_id = ?`).run(book_id);
+            result = db.prepare(`DELETE FROM Likes WHERE book_id = ?`).run(book_id);
         } catch (e) {
             console.error("Error unliking book:", e);
-            return null;
+            result = null;
         }
+	return result;
     }
 }
 

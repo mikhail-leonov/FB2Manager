@@ -2,6 +2,8 @@ const db = require("../../core/db");
 const { paginate } = require("../../core/pagination");
 const { pagedQuery } = require("../../core/dbpagination");
 const { buildSearchQuery } = require("../services/SearchQueryBuilder");
+const { BOOKS_PER_PAGE, ALL_COLUMNS } = require("../../core/constants");
+
 
 const {
     makeBookLink,
@@ -17,9 +19,16 @@ class BookModel {
     static getAll(req) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
-        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const result = pagedQuery({ table: "Books", select: "book_id", page, limit });
+        const limit = parseInt(url.searchParams.get("limit") ?? BOOKS_PER_PAGE, 10);
+        const sortBy = url.searchParams.get("sort") || "rowid";
+        const sortOrder = url.searchParams.get("order") || "DESC";
+        const validSortBy = ALL_COLUMNS.includes(sortBy) ? sortBy : "rowid";
+        const validOrder = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
+        const orderBy = `${validSortBy} ${validOrder}`;
+
+        const result = pagedQuery({ table: "Books", select: "book_id", page, limit, orderBy });
         const ids = result.data.map(r => r.book_id);
+
         return { data: this.getByIds(ids), pagination: result.pagination };
     }
     static getById(id) {
@@ -44,8 +53,8 @@ class BookModel {
     static search(req, query) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
-        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-           const q = (url.searchParams.get("q") || "").trim();
+        const limit = parseInt(url.searchParams.get("limit") ?? BOOKS_PER_PAGE, 10);
+        const q = (url.searchParams.get("q") || "").trim();
     
         const ftsQuery = buildSearchQuery(q);
     

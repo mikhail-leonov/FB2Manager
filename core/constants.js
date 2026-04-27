@@ -7,6 +7,8 @@ const path = require("path");
 // ROOT
 const ROOT = path.join(__dirname, "..");
 
+const BOOKS_PER_PAGE = 50;
+
 // DIRECTORIES
 const DB_DIR      = path.join(ROOT, "db");
 const SQL_DIR     = path.join(ROOT, "sql");
@@ -128,6 +130,24 @@ const ALL_TABLES = [
     TABLE_LIKES
 ];
 
+const ALL_COLUMNS = [
+	"rowid",
+
+	"author_id", 
+        "genre_id", 
+ 	"book_id", 
+	"serie_id", 
+
+	"firstname", 
+	"middlename", 
+	"lastname", 
+        "title", 
+	"language", 
+	"publication_date", 
+];
+
+
+
 // HTTP
 const CONTENT_TYPE_JSON = "application/json";
 const CONTENT_TYPE_JS   = "application/javascript";
@@ -209,8 +229,10 @@ module.exports = {
     TABLE_BOOK_GENRES,
     TABLE_BOOK_SERIES,
     ALL_TABLES,
+    ALL_COLUMNS,
 
     ENCODING_MAP,
+    BOOKS_PER_PAGE,
 
     IMPORT_BLOCKED_ENCODINGS, 
     IMPORT_ALLOWED_ENCODINGS,
