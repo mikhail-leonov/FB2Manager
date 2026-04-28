@@ -35,10 +35,34 @@ function ensureFolders() {
     });
 }
 
+function getTimestamp() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return ( d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "-" + pad(d.getHours()) + "-" + pad(d.getMinutes()) + "-" + pad(d.getSeconds()) );
+}
+
+function backupLogFile() {
+    if (!fs.existsSync(LOG_FILE)) return;
+
+    const timestamp = getTimestamp();
+    const ext = path.extname(LOG_FILE);
+    const base = path.basename(LOG_FILE, ext);
+    const dir = path.dirname(LOG_FILE);
+
+    const backupName = `${base}.${timestamp}${ext}`;
+    const backupPath = path.join(dir, backupName);
+
+    fs.copyFileSync(LOG_FILE, backupPath);
+    console.log(`Log backed up: ${backupPath}`);
+}
+
 function bootstrapDatabase() {
     ensureFolders();
 
+
     if (fs.existsSync(LOG_FILE)) {
+        backupLogFile(;
+
         fs.writeFileSync(LOG_FILE, "");
         console.log(`Log file cleared: ${LOG_FILE}`);
     }
