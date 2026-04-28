@@ -54,6 +54,10 @@
       <div class="stat-label">Deleted</div>
       <div class="stat-value" id="cntDeleted">0</div>
     </div>
+    <div class="stat-card processed">
+      <div class="stat-label">Processed</div>
+      <div class="stat-value" id="cntProcessed">0</div>
+    </div>
   </div>
 
   <!-- Progress bar -->
@@ -98,6 +102,7 @@
   </div>
 
 <script>
+
   let imported = 0, skipped = 0, deleted = 0, total = null, processed = 0;
   let currentReader = null;
   let heartbeatInterval = null;
@@ -125,14 +130,14 @@
     const span = document.createElement('span');
     span.className = 'log-line ' + classify(line);
     span.textContent = line + '\n';
+
     box.appendChild(span);
-    box.scrollTop = box.scrollHeight;
-    
-    // Limit log size to prevent memory issues
-    while (box.children.length > 5000) {
+    while (box.children.length > 500) {
       box.removeChild(box.firstChild);
     }
+    box.scrollTop = box.scrollHeight;
   }
+
 
   function updateProgress() {
     if (!total) return;
@@ -149,6 +154,7 @@
     if (line.includes('Resolution: IMPORTED')) { imported++; document.getElementById('cntImported').textContent = imported; processed++; updateProgress(); }
     if (line.includes('Resolution: SKIPPED'))  { skipped++;  document.getElementById('cntSkipped').textContent  = skipped;  processed++; updateProgress(); }
     if (line.includes('Deleted: true'))        { deleted++;  document.getElementById('cntDeleted').textContent  = deleted; }
+    document.getElementById('cntProcessed').textContent  = processed;
   }
 
   async function startImport() {
@@ -180,7 +186,7 @@
     imported = skipped = deleted = processed = 0; total = null;
     lastDataTime = Date.now();
     
-    ['cntImported','cntSkipped','cntDeleted'].forEach(id => document.getElementById(id).textContent = '0');
+    ['cntProcessed','cntImported','cntSkipped','cntDeleted'].forEach(id => document.getElementById(id).textContent = '0');
     document.getElementById('cntTotal').textContent = '—';
 
     // Heartbeat monitor to detect stalled connections
