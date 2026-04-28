@@ -38,7 +38,13 @@ function ensureFolders() {
 function getTimestamp() {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    return ( d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "-" + pad(d.getHours()) + "-" + pad(d.getMinutes()) + "-" + pad(d.getSeconds()) );
+    const Y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const h = pad(d.getHours());
+    const min = pad(d.getMinutes());
+    const s = pad(d.getSeconds());
+    return `${Y}-${m}-${day}-${h}-${min}-${s}`;
 }
 
 function backupLogFile() {
@@ -61,7 +67,7 @@ function bootstrapDatabase() {
 
 
     if (fs.existsSync(LOG_FILE)) {
-        backupLogFile(;
+        backupLogFile();
 
         fs.writeFileSync(LOG_FILE, "");
         console.log(`Log file cleared: ${LOG_FILE}`);
