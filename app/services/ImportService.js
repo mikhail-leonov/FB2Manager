@@ -37,14 +37,28 @@ const {
 } = require("../../core/constants");
 
 // Configuration for batch processing
-const BATCH_SIZE = 10; // Process 10 books before yielding to event loop
-const PROGRESS_INTERVAL = 5; // Log progress every 5 books
+const BATCH_SIZE = 10;
+const PROGRESS_INTERVAL = 5;
 
 const parser = new XMLParser({
     ignoreAttributes: false,
     parseTagValue: true,
     trimValues: true
 });
+
+// Skip codes:
+// 0 = no skip (success)
+// 1 = duplicate book
+// 2 = language not allowed
+// 3 = language blocked
+// 4 = encoding not allowed
+// 5 = encoding blocked
+// 6 = genre blocked
+// 7 = genre not allowed
+// 8 = author blocked
+// 9 = XML parse failed
+// 10 = file read error
+// 11 = other error
 
 function hashFile(buffer) {
     const hash = crypto.createHash("sha256").update(buffer).digest("hex");
@@ -120,39 +134,74 @@ function extractTitle(json, fallback) {
     return (json?.FictionBook?.description?.["title-info"]?.["book-title"] || fallback);
 }
 
-function shouldSkipImport({ authors, language, genres, encoding }) {
+function getSkipCode({ authors, language, genres, encoding }) {
+
+    // Check for duplicates first - code 1
+    // (handled separately in processBook)
+    
+    // Language not allowed - code 2
     if (IMPORT_ALLOWED_LANGUAGES && !IMPORT_ALLOWED_LANGUAGES.includes(language)) {
-        return `language not allowed: ${language}`;
+        return 2;
     }
+    
+    // Language blocked - code 3
     if (IMPORT_BLOCKED_LANGUAGES?.includes(language)) {
-        return `language blocked: ${language}`;
+        return 3;
     }
+    
+    // Encoding not allowed - code 4
     if (IMPORT_ALLOWED_ENCODINGS?.length && !IMPORT_ALLOWED_ENCODINGS.includes(encoding)) {
-        return `encoding not allowed: ${encoding}`;
+        return 4;
     }
+    
+    // Encoding blocked - code 5
     if (IMPORT_BLOCKED_ENCODINGS?.includes(encoding)) {
-        return `encoding blocked: ${encoding}`;
+        return 5;
     }
+    
+    // Genre blocked - code 6
+    const badGenre = genres.find(g => IMPORT_BLOCKED_GENRES?.includes(g));
+    if (badGenre) {
+        return 6;
+    }
+    
+    // Genre not allowed - code 7
+    if (IMPORT_ALLOWED_GENRES?.length) {
+        const ok = genres.some(g => IMPORT_ALLOWED_GENRES.includes(g));
+        if (!ok) {
+            return 7;
+        }
+    }
+    
+    // Author blocked - code 8
     const authorNames = authors.map(a =>
         `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim()
     );
     for (const a of authorNames) {
         if (IMPORT_BLOCKED_AUTHORS?.includes(a)) {
-            return `author blocked: ${a}`;
+            return 8;
         }
     }
-    const badGenre = genres.find(g => IMPORT_BLOCKED_GENRES?.includes(g));
-    if (badGenre) {
-        return `genre blocked: ${badGenre}`;
-    }
-    if (IMPORT_ALLOWED_GENRES?.length) {
-        const ok = genres.some(g => IMPORT_ALLOWED_GENRES.includes(g));
-        if (!ok) {
-            const g = genres.join(", ");
-            return `genre not allowed: ${g}`;
-        }
-    }
-    return null;
+    
+    return 0;
+}
+
+function getSkipMessage(code) {
+    const messages = {
+        0: "no skip",
+        1: "duplicate book",
+        2: "language not allowed",
+        3: "language blocked",
+        4: "encoding not allowed",
+        5: "encoding blocked",
+        6: "genre blocked",
+        7: "genre not allowed",
+        8: "author blocked",
+        9: "XML parse failed",
+        10: "file read error",
+        11: "other error"
+    };
+    return messages[code] || "unknown error";
 }
 
 function parseBook(filePath) {
@@ -207,15 +256,12 @@ function removeBinaryNodes(fb2Content) {
     return builder.build(json);
 }
 
-// Yields to the event loop so SSE writes are flushed to the client
 function flush() {
     return new Promise(resolve => setImmediate(resolve));
 }
 
-// Process a single book file
-async function processBook(file, index, total, existing, encodingStats, languageStats, totalSize, Log, imported, skipped, deleted, importedBooks) {
-    const stats = fs.statSync(file);
-    const fileSize = stats.size;
+async function processBook(file, index, total, existing, encodingStats, languageStats, totalSize, Log, stats, importedBooks) {
+    const fileSize = fs.statSync(file).size;
     const sizeKB = fileSize / 1024;
     const sizeMB = sizeKB / 1024;
     
@@ -229,35 +275,70 @@ async function processBook(file, index, total, existing, encodingStats, language
         const book = parsed.book;
 
         Log(`Encoding: ${parsed.encoding}`);
+        Log(`Language: ${book.language || 'unknown'}`);
+        if (parsed.authors.length > 0) {
+            Log(`Authors: ${parsed.authors.map(a => a.lastname).join(', ')}`);
+        }
+        if (parsed.genres.length > 0) {
+            Log(`Genres: ${parsed.genres.join(', ')}`);
+        }
 
         encodingStats.add(parsed.encoding);
         languageStats.add(parsed.book.language);
 
+        // Check for duplicates - code 1
         if (existing.has(book.hash)) {
             fs.unlinkSync(file);
-            Log(`Resolution: SKIPPED`);
-            Log(`Reason: duplicate book`);
+            stats[1]++; // duplicate
+            Log(`SKIP CODE: 1`);
+            Log(`Skip reason: ${getSkipMessage(1)} (hash: ${book.hash.substring(0, 16)}...)`);
             Log(`Deleted: true`);
             Log(`Time: ${Date.now() - bookStart}ms`);
             Log("\n");
-            return { imported, skipped: skipped + 1, deleted: deleted + 1, totalSize: totalSize + fileSize };
+            return { totalSize: totalSize + fileSize };
         }
 
-        const reason = shouldSkipImport({
+        const skipCode = getSkipCode({
             authors: parsed.authors,
             language: book.language,
             genres: parsed.genres,
             encoding: parsed.encoding
         });
 
-        if (reason) {
-            Log(`Resolution: SKIPPED`);
-            Log(`Reason: ${reason}`);
+        if (skipCode > 0) {
+            stats[skipCode]++;
+            
+            Log(`SKIP CODE: ${skipCode}`);
+            Log(`Skip reason: ${getSkipMessage(skipCode)}`);
+            
+            // Add specific details based on code
+            if (skipCode === 2 || skipCode === 3) {
+                Log(`Language: ${book.language}`);
+            }
+            if (skipCode === 4 || skipCode === 5) {
+                Log(`Encoding: ${parsed.encoding}`);
+            }
+            if (skipCode === 6 || skipCode === 7) {
+                Log(`Genres: ${parsed.genres.join(', ')}`);
+                if (skipCode === 6) {
+                    const blocked = parsed.genres.filter(g => IMPORT_BLOCKED_GENRES?.includes(g));
+                    Log(`Blocked genre: ${blocked.join(', ')}`);
+                }
+            }
+            if (skipCode === 8) {
+                const authorNames = parsed.authors.map(a => 
+                    `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim()
+                );
+                Log(`Author: ${authorNames.join(', ')}`);
+            }
+            
             Log(`Time: ${Date.now() - bookStart}ms`);
             Log("\n");
-            return { imported, skipped: skipped + 1, deleted, totalSize: totalSize + fileSize };
+            fs.unlinkSync(file);
+            return { totalSize: totalSize + fileSize };
         }
 
+        // Import the book
         const created = BookModel.create(book);
         BooksFTSModel.insert({
             rowid: created.lastInsertRowid,
@@ -267,36 +348,44 @@ async function processBook(file, index, total, existing, encodingStats, language
 
         existing.add(book.hash);
         importedBooks.push(book);
+        stats[0]++; // success
 
-        Log(`Resolution: IMPORTED`);
+        Log(`SKIP CODE: 0`);
+        Log(`Status: IMPORTED ✓`);
 
         if (parsed.authors.length > 0) {
             for (const a of parsed.authors) {
                 const author = AuthorModel.getOrCreate(a.firstname, a.middlename, a.lastname);
                 BookAuthorModel.link(book.book_id, author.author_id);
-                Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
+                Log(`  Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
             }
+        } else {
+            Log(`  Author: (none - using default)`);
+            const defaultAuthor = AuthorModel.getOrCreate("Unknown", null, "Author");
+            BookAuthorModel.link(book.book_id, defaultAuthor.author_id);
         }
 
         if (parsed.genres.length > 0) {
             for (const g of parsed.genres) {
                 const genre = GenreModel.getOrCreate(g);
                 if (genre) BookGenreModel.link(book.book_id, genre.genre_id);
-                Log(`Genre: ${g}`);
+                Log(`  Genre: ${g}`);
             }
+        } else {
+            Log(`  Genre: (none)`);
         }
 
         if (parsed.series.length) {
             for (const s of parsed.series) {
                 const serie = SerieModel.getOrCreate(s.title);
                 BookSerieModel.link(book.book_id, serie.serie_id, s.number);
-                Log(`Serie: ${s.title} (#${s.number || "?"})`);
+                Log(`  Serie: ${s.title} (#${s.number || "?"})`);
             }
         }
 
         const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        Log(`Copy file to: ${dest}`);
+        Log(`  Copy file to: ${dest}`);
 
         try {
             const buffer = fs.readFileSync(file);
@@ -304,45 +393,49 @@ async function processBook(file, index, total, existing, encodingStats, language
             const xml = iconv.decode(buffer, encoding);
             const cleanedXml = removeBinaryNodes(xml);
             fs.writeFileSync(dest, cleanedXml, "utf8");
-            Log(`Copy result: OK`);
+            Log(`  Copy result: OK`);
         } catch (e) {
-            Log(`Copy result: Failed`);
-            Log(`Reason: ${e.message}`);
+            Log(`  Copy result: Failed (${e.message})`);
         }
 
         fs.unlinkSync(file);
 
         const bookTime = Date.now() - bookStart;
-        Log(`Deleted: true`);
-
-        if (bookTime > 3000) {
-            Log(`Warning: Slow parse detected`);
-        }
-
-        const kbPerMs = sizeKB / bookTime;
-        const msPerKB = bookTime / sizeKB;
-
-        Log(`Time: ${bookTime} ms`);
-        Log(`Speed: ${kbPerMs.toFixed(4)} KB/ms (${(kbPerMs * 1000).toFixed(2)} KB/s)`);
-        Log(`Cost: ${msPerKB.toFixed(2)} ms/KB`);
+        Log(`  Deleted: true`);
+        Log(`  Time: ${bookTime} ms`);
         Log("\n");
 
-        return { 
-            imported: imported + 1, 
-            skipped, 
-            deleted: deleted + 1, 
-            totalSize: totalSize + fileSize 
-        };
+        return { totalSize: totalSize + fileSize };
 
     } catch (e) {
+        // Determine error code
+        let errorCode = 11; // other error default
+        if (e.message.includes("XML")) {
+            errorCode = 9; // XML parse failed
+        } else if (e.message.includes("ENOENT") || e.message.includes("file")) {
+            errorCode = 10; // file read error
+        }
+        
+        stats[errorCode]++;
+        
+        Log(`SKIP CODE: ${errorCode}`);
+        Log(`Skip reason: ${getSkipMessage(errorCode)}`);
         Log(`Error: ${e.message}`);
         Log("\n");
-        return { imported, skipped, deleted, totalSize: totalSize + fileSize };
+        
+        // Try to delete corrupted files
+        try {
+            fs.unlinkSync(file);
+            Log(`Deleted corrupted file: true`);
+        } catch (unlinkErr) {
+            Log(`Deleted corrupted file: false (${unlinkErr.message})`);
+        }
+        
+        return { totalSize: totalSize + fileSize };
     }
 }
 
 async function importBooks(onLog) {
-    // Set global import status
     global.importInProgress = true;
     global.importStartTime = Date.now();
     global.importProgress = 0;
@@ -362,11 +455,25 @@ async function importBooks(onLog) {
         return { imported: 0, skipped: 0, deleted: 0 };
     }
 
-    let imported = 0;
-    let skipped = 0;
-    let deleted = 0;
     let totalSize = 0;
     let processedCount = 0;
+    
+    // Stats array where index = skip code
+    // code 0 = imported, codes 1-11 = various skip reasons
+    const stats = {
+        0: 0,  // imported
+        1: 0,  // duplicate
+        2: 0,  // language not allowed
+        3: 0,  // language blocked
+        4: 0,  // encoding not allowed
+        5: 0,  // encoding blocked
+        6: 0,  // genre blocked
+        7: 0,  // genre not allowed
+        8: 0,  // author blocked
+        9: 0,  // XML parse failed
+        10: 0, // file read error
+        11: 0  // other error
+    };
 
     const encodingStats = new Set();
     const languageStats = new Set();
@@ -378,6 +485,22 @@ async function importBooks(onLog) {
 
     Log(`Found ${total} files for importing...`);
     Log(`Batch size: ${BATCH_SIZE} files per batch`);
+    Log(``);
+    Log(`Skip codes legend:`);
+    Log(`  0 = IMPORTED (success)`);
+    Log(`  1 = Duplicate book`);
+    Log(`  2 = Language not allowed`);
+    Log(`  3 = Language blocked`);
+    Log(`  4 = Encoding not allowed`);
+    Log(`  5 = Encoding blocked`);
+    Log(`  6 = Genre blocked`);
+    Log(`  7 = Genre not allowed`);
+    Log(`  8 = Author blocked`);
+    Log(`  9 = XML parse failed`);
+    Log(` 10 = File read error`);
+    Log(` 11 = Other error`);
+    Log(``);
+    
     const totalStart = Date.now();
 
     // Process files in batches
@@ -388,7 +511,6 @@ async function importBooks(onLog) {
         Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
         Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
         
-        // Process each file in the batch
         for (let i = 0; i < batch.length; i++) {
             const file = batch[i];
             const currentIndex = batchStart + i + 1;
@@ -402,76 +524,140 @@ async function importBooks(onLog) {
             const result = await processBook(
                 file, currentIndex, total, existing, 
                 encodingStats, languageStats, totalSize, 
-                Log, imported, skipped, deleted, importedBooks
+                Log, stats, importedBooks
             );
             
-            imported = result.imported;
-            skipped = result.skipped;
-            deleted = result.deleted;
             totalSize = result.totalSize;
             processedCount++;
-            
-            // Update global counters
             global.importProgress = processedCount;
-            
-            // Yield after each file
             await flush();
         }
         
-        // Log batch completion
         const batchTime = Date.now() - totalStart;
         Log(`\n✓ Batch completed in ${(batchTime / 1000).toFixed(2)}s`);
         Log(`  Progress: ${processedCount}/${total} files (${Math.round(processedCount / total * 100)}%)`);
-        Log(`  Imported: ${imported}, Skipped: ${skipped}, Deleted: ${deleted}\n`);
         
-        // Force garbage collection hint after each batch (optional, requires --expose-gc)
+        // Show current stats after each batch
+        const imported = stats[0];
+        const skipped = total - imported;
+        Log(`  Imported: ${imported} (code 0)`);
+        Log(`  Skipped: ${skipped} (codes 1-11)`);
+        
+        // Show non-zero skip codes
+        const skipCodes = [1,2,3,4,5,6,7,8,9,10,11];
+        for (const code of skipCodes) {
+            if (stats[code] > 0) {
+                Log(`    code ${code}: ${stats[code]} (${getSkipMessage(code)})`);
+            }
+        }
+        Log(``);
+        
         if (global.gc && batchStart % (BATCH_SIZE * 5) === 0) {
             global.gc();
             Log(`Memory garbage collection triggered`);
         }
         
-        // Yield after each batch to ensure event loop responsiveness
         await flush();
     }
 
     removeEmptyDirs();
 
-    // Log statistics
-    Log(`\n========== IMPORT STATISTICS ==========`);
-    Log(`\nEncodings detected:`);
-    for (const enc of encodingStats) Log(`  - ${enc}`);
-    Log("");
-
-    Log(`Languages detected:`);
-    for (const lng of languageStats) Log(`  - ${lng}`);
-    Log("");
+    // Log detailed statistics
+    Log(`\n========== DETAILED SKIP STATISTICS ==========`);
+    Log(`Total files processed: ${total}`);
+    Log(``);
+    
+    const imported = stats[0];
+    const skipped = total - imported;
+    const importPercentage = total > 0 ? Math.round(imported / total * 100) : 0;
+    const skipPercentage = total > 0 ? Math.round(skipped / total * 100) : 0;
+    
+    Log(`IMPORTED (code 0): ${imported} (${importPercentage}%)`);
+    Log(`SKIPPED (codes 1-11): ${skipped} (${skipPercentage}%)`);
+    Log(``);
+    Log(`Breakdown by skip code:`);
+    Log(`  Code  Description                          Count  Percentage`);
+    Log(`  ────  ───────────────────────────────────  ─────  ──────────`);
+    
+    const skipDetails = [
+        { code: 1, desc: "Duplicate book" },
+        { code: 2, desc: "Language not allowed" },
+        { code: 3, desc: "Language blocked" },
+        { code: 4, desc: "Encoding not allowed" },
+        { code: 5, desc: "Encoding blocked" },
+        { code: 6, desc: "Genre blocked" },
+        { code: 7, desc: "Genre not allowed" },
+        { code: 8, desc: "Author blocked" },
+        { code: 9, desc: "XML parse failed" },
+        { code: 10, desc: "File read error" },
+        { code: 11, desc: "Other error" }
+    ];
+    
+    for (const detail of skipDetails) {
+        const count = stats[detail.code] || 0;
+        if (count > 0) {
+            const percentage = total > 0 ? Math.round(count / total * 100) : 0;
+            const paddedDesc = detail.desc.padEnd(35, ' ');
+            const paddedCount = String(count).padStart(5, ' ');
+            const paddedPct = String(percentage).padStart(3, ' ');
+            Log(`  ${detail.code}    ${paddedDesc}  ${paddedCount}    ${paddedPct}%`);
+        }
+    }
+    
+    Log(``);
+    Log(`Encodings detected (${encodingStats.size} unique):`);
+    for (const enc of Array.from(encodingStats).sort()) {
+        Log(`  - ${enc}`);
+    }
+    Log(``);
+    Log(`Languages detected (${languageStats.size} unique):`);
+    for (const lng of Array.from(languageStats).sort()) {
+        Log(`  - ${lng}`);
+    }
+    Log(``);
 
     const totalMs = Date.now() - totalStart;
     const totalSec = (totalMs / 1000).toFixed(2);
-
     const totalKB = totalSize / 1024;
     const totalMB = totalKB / 1024;
     const kbPerSecond = totalKB / (totalMs / 1000);
     const mbPerSecond = totalMB / (totalMs / 1000);
-    const msPerTotalKB = totalMs / totalKB;
 
-    Log(`Total size: ${totalKB.toFixed(2)} KB (${totalMB.toFixed(2)} MB)`);
+    Log(`========== PERFORMANCE STATISTICS ==========`);
+    Log(`Total data processed: ${totalKB.toFixed(2)} KB (${totalMB.toFixed(2)} MB)`);
     Log(`Total time: ${totalMs} ms (${totalSec}s)`);
     Log(`Average speed: ${kbPerSecond.toFixed(2)} KB/s (${mbPerSecond.toFixed(2)} MB/s)`);
-    Log(`Cost: ${msPerTotalKB.toFixed(2)} ms/KB`);
-    Log(`\nFinal Results:`);
-    Log(`  Imported: ${imported}`);
-    Log(`  Skipped: ${skipped}`);
-    Log(`  Deleted: ${deleted}`);
-    Log(`  Total processed: ${processedCount}/${total}`);
+    Log(``);
+    Log(`========== FINAL SUMMARY ==========`);
+    Log(`  - Code 0 (IMPORTED): ${imported}`);
+    Log(`  - Code 1 (Duplicate): ${stats[1] || 0}`);
+    Log(`  - Code 2 (Language not allowed): ${stats[2] || 0}`);
+    Log(`  - Code 3 (Language blocked): ${stats[3] || 0}`);
+    Log(`  - Code 4 (Encoding not allowed): ${stats[4] || 0}`);
+    Log(`  - Code 5 (Encoding blocked): ${stats[5] || 0}`);
+    Log(`  - Code 6 (Genre blocked): ${stats[6] || 0}`);
+    Log(`  - Code 7 (Genre not allowed): ${stats[7] || 0}`);
+    Log(`  - Code 8 (Author blocked): ${stats[8] || 0}`);
+    Log(`  - Code 9 (XML parse failed): ${stats[9] || 0}`);
+    Log(`  - Code 10 (File read error): ${stats[10] || 0}`);
+    Log(`  ✗ Code 11 (Other error): ${stats[11] || 0}`);
+    Log(``);
+    Log(`Total skipped: ${skipped}`);
+    Log(`Total processed: ${total}`);
     Log(`\nDone: ${totalSec}s`);
 
-    // Clear global import status
+    // Store breakdown in global for API access
+    global.importBreakdown = stats;
     global.importInProgress = false;
     global.importStartTime = null;
     global.importProgress = null;
 
-    return { imported, skipped, deleted };
+    return { 
+        imported: stats[0], 
+        skipped: skipped, 
+        deleted: total - stats[0],
+        breakdown: stats 
+    };
 }
 
 module.exports = { importBooks };

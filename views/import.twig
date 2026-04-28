@@ -6,20 +6,164 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   <link href="/css/style.css" rel="stylesheet">
+  <style>
+    .terminal-wrap { min-height: 700px; }
+    #logBox { height: 500px; overflow-y: auto; }
+    .log-line { font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap; word-break: break-word; }
+    
+    .stats-row {
+      display: flex;
+      gap: 0.75rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .stat-card.total .stat-value { color: var(--accent); }
+    .stat-card.imported .stat-value { color: #00ff9d; }
+    .stat-card.processed .stat-value { color: var(--accent); }
+    .stat-card.skipped .stat-value { color: var(--warn); }
+    
+    .progress-wrap {
+      margin: 1rem 0;
+      display: none;
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+      color: var(--text-dim);
+    }
+    .progress-track {
+      background: rgba(255,255,255,0.1);
+      height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, var(--accent), #00ff9d);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    #summaryBox {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+    #summaryBox.visible { display: block; }
+    .summary-grid {
+      display: flex;
+      gap: 1rem;
+      margin: 0.5rem 0;
+      flex-wrap: wrap;
+    }
+    .import-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .import-btn-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    #statusBadge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    #statusBadge.idle { background: #2a2a2a; color: #888; }
+    #statusBadge.running { background: #ffd70020; color: #ffd700; animation: pulse 1s infinite; }
+    #statusBadge.done { background: #00ff9d20; color: #00ff9d; }
+    #statusBadge.error { background: #ff444420; color: #ff4444; }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    button {
+      background: var(--accent);
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 4px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,255,157,0.3);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #000;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .topbar-search input {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--text);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
 
-
 <div class="page-header">
-  <h1>FB2 <span>Import</span></h1>
-
+  <div class="import-header">
+    <h1>FB2 <span>Import</span></h1>
     <div class="import-btn-wrap">
-      <span id="statusBadge">idle</span>
+      <span id="statusBadge" class="idle">idle</span>
       <button id="importBtn" onclick="startImport()">
         <span class="spinner" id="spinner"></span>
         <span id="btnLabel">▶ Run Import</span>
       </button>
     </div>
+  </div>
 
   <div class="nav-panel d-flex gap-2 p-2">
     <a href="/" class="btn btn-outline-light btn-sm">Home</a>
@@ -35,78 +179,92 @@
   </div>
 </div>
 
-
-  <!-- Live stat counters -->
-  <div class="stats-row">
-    <div class="stat-card total">
-      <div class="stat-label">Files found</div>
-      <div class="stat-value" id="cntTotal">—</div>
-    </div>
-    <div class="stat-card imported">
-      <div class="stat-label">Imported</div>
-      <div class="stat-value" id="cntImported">0</div>
-    </div>
-    <div class="stat-card skipped">
-      <div class="stat-label">Skipped</div>
-      <div class="stat-value" id="cntSkipped">0</div>
-    </div>
-    <div class="stat-card deleted">
-      <div class="stat-label">Deleted</div>
-      <div class="stat-value" id="cntDeleted">0</div>
-    </div>
-    <div class="stat-card total">
-      <div class="stat-label">Processed</div>
-      <div class="stat-value" id="cntProcessed">0</div>
-    </div>
+<!-- Main stats row - includes all skip badges -->
+<div class="stats-row">
+  <div class="stat-card total">
+    <div class="stat-label">Files Found</div>
+    <div class="stat-value" id="cntTotal">—</div>
   </div>
-
-  <!-- Progress bar -->
-  <div class="progress-wrap" id="progressWrap">
-    <div class="progress-label">
-      <span id="progressText">Processing...</span>
-      <span id="progressPct">0%</span>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
+  <div class="stat-card imported">
+    <div class="stat-label">Imported</div>
+    <div class="stat-value" id="cntImported">0</div>
   </div>
-
-  <!-- Terminal log -->
-  <div class="terminal-wrap">
-    <div class="terminal-header">
-      <div class="dot dot-r"></div>
-      <div class="dot dot-y"></div>
-      <div class="dot dot-g"></div>
-      <span class="terminal-title">Log stream</span>
-    </div>
-    <div id="logBox"><span style="color:#2a3a2a">// Click "Run Import" to begin…</span></div>
+  <div class="stat-card skipped">
+    <div class="stat-label">🔄 Duplicate</div>
+    <div class="stat-value" id="skipDuplicate">0</div>
   </div>
-
-  <!-- Final summary -->
-  <div id="summaryBox">
-    <h5>✓ Import Complete</h5>
-    <div class="summary-grid">
-      <div class="summary-item">
-        <span class="n" id="sumImported" style="color:var(--accent)">0</span>
-        <span class="l">imported</span>
-      </div>
-      <div class="summary-item">
-        <span class="n" id="sumSkipped" style="color:var(--warn)">0</span>
-        <span class="l">skipped</span>
-      </div>
-      <div class="summary-item">
-        <span class="n" id="sumDeleted" style="color:var(--danger)">0</span>
-        <span class="l">deleted</span>
-      </div>
-    </div>
+  <div class="stat-card skipped">
+    <div class="stat-label">🌐 Language</div>
+    <div class="stat-value" id="skipLanguage">0</div>
   </div>
+  <div class="stat-card skipped">
+    <div class="stat-label">📚 Genre</div>
+    <div class="stat-value" id="skipGenre">0</div>
+  </div>
+  <div class="stat-card skipped">
+    <div class="stat-label">✍️ Author</div>
+    <div class="stat-value" id="skipAuthor">0</div>
+  </div>
+  <div class="stat-card skipped">
+    <div class="stat-label">📝 Encoding</div>
+    <div class="stat-value" id="skipEncoding">0</div>
+  </div>
+  <div class="stat-card processed">
+    <div class="stat-label">Processed</div>
+    <div class="stat-value" id="cntProcessed">0</div>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-label">
+    <span id="progressText">Processing...</span>
+    <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<!-- Terminal log -->
+<div class="terminal-wrap">
+  <div class="terminal-header">
+    <div class="dot dot-r"></div>
+    <div class="dot dot-y"></div>
+    <div class="dot dot-g"></div>
+    <span class="terminal-title">Live import log</span>
+  </div>
+  <div id="logBox"><span style="color:#2a3a2a">// Click "Run Import" to begin…</span></div>
+</div>
+
+<!-- Final summary -->
+<div id="summaryBox">
+  <h5>✓ Import Complete</h5>
+  <div class="summary-grid">
+    <div>📥 Imported: <strong id="sumImported">0</strong></div>
+    <div>🔄 Duplicate: <strong id="sumDuplicate">0</strong></div>
+    <div>🌐 Language: <strong id="sumLanguage">0</strong></div>
+    <div>📚 Genre: <strong id="sumGenre">0</strong></div>
+    <div>✍️ Author: <strong id="sumAuthor">0</strong></div>
+    <div>📝 Encoding: <strong id="sumEncoding">0</strong></div>
+  </div>
+</div>
 
 <script>
-
-  let imported = 0, skipped = 0, deleted = 0, total = null, processed = 0;
+  let total = null, processed = 0;
   let currentReader = null;
   let heartbeatInterval = null;
   let lastDataTime = null;
+  
+  // Skip counters for 5 categories
+  let skipCounts = {
+    duplicate: 0,
+    language: 0,
+    genre: 0,
+    author: 0,
+    encoding: 0
+  };
+  let imported = 0;
 
   function setStatus(s, label) {
     const b = document.getElementById('statusBadge');
@@ -114,53 +272,112 @@
     b.textContent = label;
   }
 
-  function classify(line) {
-    if (line.startsWith('---')) return 'separator';
-    if (line.startsWith('Index:')) return 'index';
-    if (line.startsWith('File:')) return 'file';
-    if (line.includes('IMPORTED')) return 'resolution-imported';
-    if (line.includes('SKIPPED')) return 'resolution-skipped';
-    if (line.startsWith('Error:')) return 'resolution-error';
-    if (line.startsWith('Done:') || line.startsWith('Imported:') || line.startsWith('Skipped:') || line.startsWith('Deleted:')) return 'summary';
-    return '';
+  function updateSkipDisplay(category, value) {
+    const element = document.getElementById(`skip${category.charAt(0).toUpperCase() + category.slice(1)}`);
+    if (element) {
+      element.textContent = value;
+      // Flash effect
+      element.style.transform = 'scale(1.1)';
+      setTimeout(() => { element.style.transform = 'scale(1)'; }, 200);
+    }
+  }
+
+  function updateProcessedDisplay() {
+    document.getElementById('cntProcessed').textContent = processed;
+    if (total && total > 0) {
+      const pct = Math.min(100, Math.round((processed / total) * 100));
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressPct').textContent = pct + '%';
+      document.getElementById('progressText').textContent = `Processing ${processed} / ${total}`;
+    }
   }
 
   function appendLog(line) {
     const box = document.getElementById('logBox');
     const span = document.createElement('span');
-    span.className = 'log-line ' + classify(line);
+    span.className = 'log-line';
     span.textContent = line + '\n';
-
     box.appendChild(span);
-    while (box.children.length > 500) {
+    while (box.children.length > 300) {
       box.removeChild(box.firstChild);
     }
     box.scrollTop = box.scrollHeight;
   }
 
-
-  function updateProgress() {
-    if (!total) return;
-    const pct = Math.min(100, Math.round((processed / total) * 100));
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressPct').textContent = pct + '%';
-    document.getElementById('progressText').textContent = `Processing ${processed} / ${total}`;
+  // Map skip codes to categories
+  function getSkipCategory(code) {
+    // Code 1: Duplicate
+    if (code === 1) return 'duplicate';
+    // Codes 2-3: Language
+    if (code === 2 || code === 3) return 'language';
+    // Codes 4-5: Encoding
+    if (code === 4 || code === 5) return 'encoding';
+    // Codes 6-7: Genre
+    if (code === 6 || code === 7) return 'genre';
+    // Code 8: Author
+    if (code === 8) return 'author';
+    // Codes 9-11: Other (not displayed in badges)
+    return null;
   }
 
   function parseLine(line) {
+    // Parse total files found
     const mTotal = line.match(/^Found (\d+) files/);
-    if (mTotal) { total = parseInt(mTotal[1]); document.getElementById('cntTotal').textContent = total; updateProgress(); return; }
+    if (mTotal) { 
+      total = parseInt(mTotal[1]); 
+      document.getElementById('cntTotal').textContent = total;
+      updateProcessedDisplay();
+      return; 
+    }
 
-    if (line.includes('Resolution: IMPORTED')) { imported++; document.getElementById('cntImported').textContent = imported; processed++; updateProgress(); }
-    if (line.includes('Resolution: SKIPPED'))  { skipped++;  document.getElementById('cntSkipped').textContent  = skipped;  processed++; updateProgress(); }
-    if (line.includes('Deleted: true'))        { deleted++;  document.getElementById('cntDeleted').textContent  = deleted; }
-    document.getElementById('cntProcessed').textContent  = processed;
+    // Parse SKIP CODE
+    const skipCodeMatch = line.match(/SKIP CODE:\s*(\d+)/);
+    if (skipCodeMatch) {
+      const code = parseInt(skipCodeMatch[1]);
+      if (code === 0) {
+        imported++;
+        document.getElementById('cntImported').textContent = imported;
+      } else {
+        const category = getSkipCategory(code);
+        if (category && skipCounts[category] !== undefined) {
+          skipCounts[category]++;
+          updateSkipDisplay(category, skipCounts[category]);
+        }
+      }
+      processed = imported + Object.values(skipCounts).reduce((a, b) => a + b, 0);
+      updateProcessedDisplay();
+    }
+    
+    appendLog(line);
+  }
+
+  function resetStats() {
+    imported = 0;
+    processed = 0;
+    total = null;
+    skipCounts = {
+      duplicate: 0,
+      language: 0,
+      genre: 0,
+      author: 0,
+      encoding: 0
+    };
+    document.getElementById('cntImported').textContent = '0';
+    document.getElementById('cntProcessed').textContent = '0';
+    document.getElementById('cntTotal').textContent = '—';
+    document.getElementById('skipDuplicate').textContent = '0';
+    document.getElementById('skipLanguage').textContent = '0';
+    document.getElementById('skipGenre').textContent = '0';
+    document.getElementById('skipAuthor').textContent = '0';
+    document.getElementById('skipEncoding').textContent = '0';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressPct').textContent = '0%';
+    document.getElementById('progressText').textContent = 'Processing...';
   }
 
   async function startImport() {
     const btn = document.getElementById('importBtn');
     
-    // Cancel ongoing import if exists
     if (currentReader) {
       try {
         await currentReader.cancel();
@@ -180,16 +397,14 @@
     document.getElementById('btnLabel').textContent = 'Running…';
     setStatus('running', 'running');
 
-    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('logBox').innerHTML = '<span style="color:#2a3a2a">// Import started...\n</span>';
     document.getElementById('progressWrap').classList.add('visible');
     document.getElementById('summaryBox').classList.remove('visible');
-    imported = skipped = deleted = processed = 0; total = null;
-    lastDataTime = Date.now();
     
-    ['cntProcessed','cntImported','cntSkipped','cntDeleted'].forEach(id => document.getElementById(id).textContent = '0');
-    document.getElementById('cntTotal').textContent = '—';
+    resetStats();
+    
+    lastDataTime = Date.now();
 
-    // Heartbeat monitor to detect stalled connections
     heartbeatInterval = setInterval(() => {
       if (lastDataTime && (Date.now() - lastDataTime) > 45000) {
         appendLog('[warn] Connection stalled - no data for 45 seconds');
@@ -226,17 +441,20 @@
             break;
           }
           parseLine(msg);
-          appendLog(msg);
         }
       }
 
-      // Final summary
+      // Update final summary
       document.getElementById('sumImported').textContent = imported;
-      document.getElementById('sumSkipped').textContent  = skipped;
-      document.getElementById('sumDeleted').textContent  = deleted;
+      document.getElementById('sumDuplicate').textContent = skipCounts.duplicate;
+      document.getElementById('sumLanguage').textContent = skipCounts.language;
+      document.getElementById('sumGenre').textContent = skipCounts.genre;
+      document.getElementById('sumAuthor').textContent = skipCounts.author;
+      document.getElementById('sumEncoding').textContent = skipCounts.encoding;
       document.getElementById('summaryBox').classList.add('visible');
       document.getElementById('progressFill').style.width = '100%';
       document.getElementById('progressPct').textContent = '100%';
+      
       setStatus('done', 'done');
 
     } catch (e) {
