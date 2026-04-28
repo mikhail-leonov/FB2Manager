@@ -54,12 +54,3 @@ module.exports = {
     renderTable,
     renderJson
 };
-
-function renderJson(obj) {
-    return `<pre>${JSON.stringify(obj, null, 2)}</pre>`;
-}
-
-module.exports = {
-    renderTable,
-    renderJson
-};

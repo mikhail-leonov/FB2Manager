@@ -9,4 +9,4 @@ IF %ERRORLEVEL%==0 (
     taskkill /IM node.exe /F
 )
 
-node server.js
+node --max-old-space-size=4096 --expose-gc server.js

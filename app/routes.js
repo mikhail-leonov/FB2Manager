@@ -85,6 +85,7 @@ async function router(req, res) {
         ["GET", "/books",     		BookController.index],
         ["GET", "/import",              ImportController.run],
         ["GET", "/import-stream",       ImportController.stream],
+        ["GET", "/import-status", 	ImportController.status],
         ["GET", "/book/:id",  		BookController.show],
 
         ["GET", "/authors",   		AuthorController.index],
@@ -102,6 +103,7 @@ async function router(req, res) {
         ["GET", "/like/like/:id/:uid",  LikeController.like],
         ["GET", "/like/unlike/:id/:uid",LikeController.unlike],
         ["GET", "/like/status/:id/:uid",LikeController.status],
+
 
         ["GET", "/debug",      		DebugController.index],
         ["GET", "/db",        		DbController.dump],

@@ -8,6 +8,8 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 
 const BOOKS_PER_PAGE = 50;
+const IMPORT_TIMEOUT_MS = 4 * 3600000; 
+
 
 // DIRECTORIES
 const DB_DIR      = path.join(ROOT, "db");
@@ -233,6 +235,7 @@ module.exports = {
 
     ENCODING_MAP,
     BOOKS_PER_PAGE,
+    IMPORT_TIMEOUT_MS,
 
     IMPORT_BLOCKED_ENCODINGS, 
     IMPORT_ALLOWED_ENCODINGS,

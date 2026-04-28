@@ -36,6 +36,10 @@ const {
     FILES_DIR
 } = require("../../core/constants");
 
+// Configuration for batch processing
+const BATCH_SIZE = 10; // Process 10 books before yielding to event loop
+const PROGRESS_INTERVAL = 5; // Log progress every 5 books
+
 const parser = new XMLParser({
     ignoreAttributes: false,
     parseTagValue: true,
@@ -208,7 +212,141 @@ function flush() {
     return new Promise(resolve => setImmediate(resolve));
 }
 
+// Process a single book file
+async function processBook(file, index, total, existing, encodingStats, languageStats, totalSize, Log, imported, skipped, deleted, importedBooks) {
+    const stats = fs.statSync(file);
+    const fileSize = stats.size;
+    const sizeKB = fileSize / 1024;
+    const sizeMB = sizeKB / 1024;
+    
+    Log(`File: ${file}`);
+    Log(`Size: ${sizeKB.toFixed(2)} KB (${sizeMB.toFixed(2)} MB)`);
+
+    const bookStart = Date.now();
+    
+    try {
+        const parsed = parseBook(file);
+        const book = parsed.book;
+
+        Log(`Encoding: ${parsed.encoding}`);
+
+        encodingStats.add(parsed.encoding);
+        languageStats.add(parsed.book.language);
+
+        if (existing.has(book.hash)) {
+            fs.unlinkSync(file);
+            Log(`Resolution: SKIPPED`);
+            Log(`Reason: duplicate book`);
+            Log(`Deleted: true`);
+            Log(`Time: ${Date.now() - bookStart}ms`);
+            Log("\n");
+            return { imported, skipped: skipped + 1, deleted: deleted + 1, totalSize: totalSize + fileSize };
+        }
+
+        const reason = shouldSkipImport({
+            authors: parsed.authors,
+            language: book.language,
+            genres: parsed.genres,
+            encoding: parsed.encoding
+        });
+
+        if (reason) {
+            Log(`Resolution: SKIPPED`);
+            Log(`Reason: ${reason}`);
+            Log(`Time: ${Date.now() - bookStart}ms`);
+            Log("\n");
+            return { imported, skipped: skipped + 1, deleted, totalSize: totalSize + fileSize };
+        }
+
+        const created = BookModel.create(book);
+        BooksFTSModel.insert({
+            rowid: created.lastInsertRowid,
+            title: book.title,
+            annotation: book.annotation
+        });
+
+        existing.add(book.hash);
+        importedBooks.push(book);
+
+        Log(`Resolution: IMPORTED`);
+
+        if (parsed.authors.length > 0) {
+            for (const a of parsed.authors) {
+                const author = AuthorModel.getOrCreate(a.firstname, a.middlename, a.lastname);
+                BookAuthorModel.link(book.book_id, author.author_id);
+                Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
+            }
+        }
+
+        if (parsed.genres.length > 0) {
+            for (const g of parsed.genres) {
+                const genre = GenreModel.getOrCreate(g);
+                if (genre) BookGenreModel.link(book.book_id, genre.genre_id);
+                Log(`Genre: ${g}`);
+            }
+        }
+
+        if (parsed.series.length) {
+            for (const s of parsed.series) {
+                const serie = SerieModel.getOrCreate(s.title);
+                BookSerieModel.link(book.book_id, serie.serie_id, s.number);
+                Log(`Serie: ${s.title} (#${s.number || "?"})`);
+            }
+        }
+
+        const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        Log(`Copy file to: ${dest}`);
+
+        try {
+            const buffer = fs.readFileSync(file);
+            const encoding = detectEncoding(buffer);
+            const xml = iconv.decode(buffer, encoding);
+            const cleanedXml = removeBinaryNodes(xml);
+            fs.writeFileSync(dest, cleanedXml, "utf8");
+            Log(`Copy result: OK`);
+        } catch (e) {
+            Log(`Copy result: Failed`);
+            Log(`Reason: ${e.message}`);
+        }
+
+        fs.unlinkSync(file);
+
+        const bookTime = Date.now() - bookStart;
+        Log(`Deleted: true`);
+
+        if (bookTime > 3000) {
+            Log(`Warning: Slow parse detected`);
+        }
+
+        const kbPerMs = sizeKB / bookTime;
+        const msPerKB = bookTime / sizeKB;
+
+        Log(`Time: ${bookTime} ms`);
+        Log(`Speed: ${kbPerMs.toFixed(4)} KB/ms (${(kbPerMs * 1000).toFixed(2)} KB/s)`);
+        Log(`Cost: ${msPerKB.toFixed(2)} ms/KB`);
+        Log("\n");
+
+        return { 
+            imported: imported + 1, 
+            skipped, 
+            deleted: deleted + 1, 
+            totalSize: totalSize + fileSize 
+        };
+
+    } catch (e) {
+        Log(`Error: ${e.message}`);
+        Log("\n");
+        return { imported, skipped, deleted, totalSize: totalSize + fileSize };
+    }
+}
+
 async function importBooks(onLog) {
+    // Set global import status
+    global.importInProgress = true;
+    global.importStartTime = Date.now();
+    global.importProgress = 0;
+
     function Log(msg) {
         fs.appendFileSync(LOG_FILE, msg + "\n");
         console.log(msg);
@@ -216,167 +354,97 @@ async function importBooks(onLog) {
     }
 
     const files = getAllFiles();
+    let total = files.length;
+
+    if (total === 0) {
+        Log("No files found to import");
+        global.importInProgress = false;
+        return { imported: 0, skipped: 0, deleted: 0 };
+    }
 
     let imported = 0;
     let skipped = 0;
     let deleted = 0;
-    let index = 0;
-    let total = files.length;
-    let kbPerMs = 0;
-    let msPerKB = 0;
     let totalSize = 0;
+    let processedCount = 0;
 
     const encodingStats = new Set();
     const languageStats = new Set();
+    const importedBooks = [];
 
     const existing = new Set(
         BookModel.getAllHashes().map(b => b.hash)
     );
 
-    Log(`Found ${files.length} files for importing...`);
+    Log(`Found ${total} files for importing...`);
+    Log(`Batch size: ${BATCH_SIZE} files per batch`);
     const totalStart = Date.now();
 
-    for (const file of files) {
-        Log(`------------------------------------------------------------------`);
-        Log(`Index: ${index}/${total}`);
-        Log(`------------------------------------------------------------------`);
-        Log(`File: ${file}`);
-
-        const stats = fs.statSync(file);
-	totalSize = totalSize + stats.size;
-        const sizeKB = stats.size / 1024;
-        const sizeMB = sizeKB / 1024;
-        Log(`Size: ${sizeKB.toFixed(2)} KB (${sizeMB.toFixed(2)} MB)`);
-
-        const bookStart = Date.now();
-        try {
-            index++;
-            const parsed = parseBook(file);
-            const book = parsed.book;
-
-            Log(`Encoding: ${parsed.encoding}`);
-
-            encodingStats.add(parsed.encoding);
-            languageStats.add(parsed.book.language);
-
-            if (existing.has(book.hash)) {
-                skipped++;
-                fs.unlinkSync(file);
-                deleted++;
-                Log(`Resolution: SKIPPED`);
-                Log(`Reason: duplicate book`);
-                Log(`Deleted: true`);
-                Log(`Time: ${Date.now() - bookStart}ms`);
-                Log("\n");
-                await flush();
-                continue;
-            }
-
-            const reason = shouldSkipImport({
-                authors: parsed.authors,
-                language: book.language,
-                genres: parsed.genres,
-                encoding: parsed.encoding
-            });
-
-            if (reason) {
-                skipped++;
-                Log(`Resolution: SKIPPED`);
-                Log(`Reason: ${reason}`);
-                Log(`Time: ${Date.now() - bookStart}ms`);
-                Log("\n");
-                await flush();
-                continue;
-            }
-
- 	    const created = BookModel.create(book);
-	    BooksFTSModel.insert({
-		rowid: created.lastInsertRowid,
-		title: book.title,
-		annotation: book.annotation
-	    });
-
-            existing.add(book.hash);
-            imported++;
-
-            Log(`Resolution: IMPORTED`);
-
-
-            if (parsed.authors.length > 0) {
-                for (const a of parsed.authors) {
-                    const author = AuthorModel.getOrCreate(a.firstname, a.middlename, a.lastname);
-                    BookAuthorModel.link(book.book_id, author.author_id);
-                    Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
-                }
-            }
-
-            if (parsed.genres.length > 0) {
-                for (const g of parsed.genres) {
-                    const genre = GenreModel.getOrCreate(g);
-                    if (genre) BookGenreModel.link(book.book_id, genre.genre_id);
-                    Log(`Genre: ${g}`);
-                }
-            }
-
-            if (parsed.series.length) {
-                for (const s of parsed.series) {
-                    const serie = SerieModel.getOrCreate(s.title);
-                    BookSerieModel.link(book.book_id, serie.serie_id, s.number);
-                    Log(`Serie: ${s.title} (#${s.number || "?"})`);
-                }
-            }
-
-            const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
-            fs.mkdirSync(path.dirname(dest), { recursive: true });
-            Log(`Copy file to: ${dest}`);
-
-            try {
-                const buffer = fs.readFileSync(file);
-                const encoding = detectEncoding(buffer);
-                const xml = iconv.decode(buffer, encoding);
-                const cleanedXml = removeBinaryNodes(xml);
-                fs.writeFileSync(dest, cleanedXml, "utf8");
-                Log(`Copy result: OK`);
-            } catch (e) {
-                Log(`Copy result: Failed`);
-                Log(`Reason: ${e.message}`);
-            }
-
-            fs.unlinkSync(file);
-            deleted++;
-
-            const bookTime = Date.now() - bookStart;
-            Log(`Deleted: true`);
-
-            if (bookTime > 3000) {
-                Log(`Warning: Slow parse detected`);
-            }
-
-            kbPerMs = sizeKB / bookTime;
-            msPerKB = bookTime / sizeKB;
-
-            Log(`Time: ${bookTime} ms`);
-            Log(`Speed: ${kbPerMs.toFixed(4)} KB/ms (${(kbPerMs * 1000).toFixed(2)} KB/s)`);
-            Log(`Cost: ${msPerKB.toFixed(2)} ms/KB`);
-            Log("\n");
-
-        } catch (e) {
-            Log(`Error: ${e.message}`);
+    // Process files in batches
+    for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
+        const batch = files.slice(batchStart, batchEnd);
+        
+        Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
+        Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
+        
+        // Process each file in the batch
+        for (let i = 0; i < batch.length; i++) {
+            const file = batch[i];
+            const currentIndex = batchStart + i + 1;
+            
+            Log(`------------------------------------------------------------------`);
+            Log(`Index: ${currentIndex}/${total} (Batch progress: ${i + 1}/${batch.length})`);
+            Log(`------------------------------------------------------------------`);
+            
+            global.importProgress = currentIndex;
+            
+            const result = await processBook(
+                file, currentIndex, total, existing, 
+                encodingStats, languageStats, totalSize, 
+                Log, imported, skipped, deleted, importedBooks
+            );
+            
+            imported = result.imported;
+            skipped = result.skipped;
+            deleted = result.deleted;
+            totalSize = result.totalSize;
+            processedCount++;
+            
+            // Update global counters
+            global.importProgress = processedCount;
+            
+            // Yield after each file
+            await flush();
         }
-
-        // Yield to event loop after every file so SSE chunks are sent
+        
+        // Log batch completion
+        const batchTime = Date.now() - totalStart;
+        Log(`\n✓ Batch completed in ${(batchTime / 1000).toFixed(2)}s`);
+        Log(`  Progress: ${processedCount}/${total} files (${Math.round(processedCount / total * 100)}%)`);
+        Log(`  Imported: ${imported}, Skipped: ${skipped}, Deleted: ${deleted}\n`);
+        
+        // Force garbage collection hint after each batch (optional, requires --expose-gc)
+        if (global.gc && batchStart % (BATCH_SIZE * 5) === 0) {
+            global.gc();
+            Log(`Memory garbage collection triggered`);
+        }
+        
+        // Yield after each batch to ensure event loop responsiveness
         await flush();
     }
 
     removeEmptyDirs();
 
-    Log(`Encodings:`);
-    for (const enc of encodingStats) Log(`- ${enc}`);
-    Log("\n");
+    // Log statistics
+    Log(`\n========== IMPORT STATISTICS ==========`);
+    Log(`\nEncodings detected:`);
+    for (const enc of encodingStats) Log(`  - ${enc}`);
+    Log("");
 
-    Log(`Languages:`);
-    for (const lng of languageStats) Log(`- ${lng}`);
-    Log("\n");
+    Log(`Languages detected:`);
+    for (const lng of languageStats) Log(`  - ${lng}`);
+    Log("");
 
     const totalMs = Date.now() - totalStart;
     const totalSec = (totalMs / 1000).toFixed(2);
@@ -388,14 +456,20 @@ async function importBooks(onLog) {
     const msPerTotalKB = totalMs / totalKB;
 
     Log(`Total size: ${totalKB.toFixed(2)} KB (${totalMB.toFixed(2)} MB)`);
-    Log(`Total time: ${totalMs} ms`);
+    Log(`Total time: ${totalMs} ms (${totalSec}s)`);
     Log(`Average speed: ${kbPerSecond.toFixed(2)} KB/s (${mbPerSecond.toFixed(2)} MB/s)`);
     Log(`Cost: ${msPerTotalKB.toFixed(2)} ms/KB`);
-    Log(`Imported: ${imported}`);
-    Log(`Skipped: ${skipped}`);
-    Log(`Deleted: ${deleted}`);
-    Log("\n");
-    Log(`Done: ${totalSec}s`);
+    Log(`\nFinal Results:`);
+    Log(`  Imported: ${imported}`);
+    Log(`  Skipped: ${skipped}`);
+    Log(`  Deleted: ${deleted}`);
+    Log(`  Total processed: ${processedCount}/${total}`);
+    Log(`\nDone: ${totalSec}s`);
+
+    // Clear global import status
+    global.importInProgress = false;
+    global.importStartTime = null;
+    global.importProgress = null;
 
     return { imported, skipped, deleted };
 }

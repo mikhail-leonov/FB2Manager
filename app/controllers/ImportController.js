@@ -10,7 +10,14 @@ class ImportController {
         res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
         return res.end(html);
     }
-
+    static status(req, res) {
+        res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
+        res.end(JSON.stringify({
+            running: !!global.importInProgress,
+            startTime: global.importStartTime,
+            filesProcessed: global.importProgress || 0
+        }));
+    }
     static async stream(req, res) {
         res.writeHead(200, {
             "Content-Type": "text/event-stream",

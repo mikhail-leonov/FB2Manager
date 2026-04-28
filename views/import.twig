@@ -99,6 +99,9 @@
 
 <script>
   let imported = 0, skipped = 0, deleted = 0, total = null, processed = 0;
+  let currentReader = null;
+  let heartbeatInterval = null;
+  let lastDataTime = null;
 
   function setStatus(s, label) {
     const b = document.getElementById('statusBadge');
@@ -124,6 +127,11 @@
     span.textContent = line + '\n';
     box.appendChild(span);
     box.scrollTop = box.scrollHeight;
+    
+    // Limit log size to prevent memory issues
+    while (box.children.length > 5000) {
+      box.removeChild(box.firstChild);
+    }
   }
 
   function updateProgress() {
@@ -145,6 +153,22 @@
 
   async function startImport() {
     const btn = document.getElementById('importBtn');
+    
+    // Cancel ongoing import if exists
+    if (currentReader) {
+      try {
+        await currentReader.cancel();
+      } catch (e) {
+        console.error('Error canceling reader:', e);
+      }
+      currentReader = null;
+    }
+    
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+    
     btn.disabled = true;
     document.getElementById('spinner').style.display = 'block';
     document.getElementById('btnLabel').textContent = 'Running…';
@@ -154,25 +178,47 @@
     document.getElementById('progressWrap').classList.add('visible');
     document.getElementById('summaryBox').classList.remove('visible');
     imported = skipped = deleted = processed = 0; total = null;
+    lastDataTime = Date.now();
+    
     ['cntImported','cntSkipped','cntDeleted'].forEach(id => document.getElementById(id).textContent = '0');
     document.getElementById('cntTotal').textContent = '—';
 
+    // Heartbeat monitor to detect stalled connections
+    heartbeatInterval = setInterval(() => {
+      if (lastDataTime && (Date.now() - lastDataTime) > 45000) {
+        appendLog('[warn] Connection stalled - no data for 45 seconds');
+        if (currentReader) {
+          currentReader.cancel();
+        }
+      }
+    }, 10000);
+
     try {
       const resp = await fetch('/import-stream');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      
       const reader = resp.body.getReader();
+      currentReader = reader;
       const decoder = new TextDecoder();
       let buf = '';
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+        
+        lastDataTime = Date.now();
         buf += decoder.decode(value, { stream: true });
         const lines = buf.split('\n');
         buf = lines.pop();
+        
         for (const line of lines) {
           if (!line.startsWith('data:')) continue;
           const msg = line.slice(5).trim();
-          if (msg === '[DONE]') break;
+          if (msg === '[DONE]') {
+            await reader.cancel();
+            currentReader = null;
+            break;
+          }
           parseLine(msg);
           appendLog(msg);
         }
@@ -188,13 +234,23 @@
       setStatus('done', 'done');
 
     } catch (e) {
-      appendLog('Error: ' + e.message);
-      setStatus('error', 'error');
+      if (e.name !== 'AbortError') {
+        appendLog('Error: ' + e.message);
+        setStatus('error', 'error');
+      } else {
+        appendLog('[warn] Import cancelled');
+        setStatus('idle', 'idle');
+      }
+    } finally {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+      currentReader = null;
+      btn.disabled = false;
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('btnLabel').textContent = '▶ Run Import';
     }
-
-    btn.disabled = false;
-    document.getElementById('spinner').style.display = 'none';
-    document.getElementById('btnLabel').textContent = '▶ Run Import';
   }
 </script>
 </body>
