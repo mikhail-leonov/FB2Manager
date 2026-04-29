@@ -190,23 +190,23 @@
     <div class="stat-value" id="cntImported">0</div>
   </div>
   <div class="stat-card skipped">
-    <div class="stat-label">🔄 Duplicate</div>
+    <div class="stat-label">Duplicate</div>
     <div class="stat-value" id="skipDuplicate">0</div>
   </div>
   <div class="stat-card skipped">
-    <div class="stat-label">🌐 Language</div>
+    <div class="stat-label">Language</div>
     <div class="stat-value" id="skipLanguage">0</div>
   </div>
   <div class="stat-card skipped">
-    <div class="stat-label">📚 Genre</div>
+    <div class="stat-label">Genre</div>
     <div class="stat-value" id="skipGenre">0</div>
   </div>
   <div class="stat-card skipped">
-    <div class="stat-label">✍️ Author</div>
+    <div class="stat-label">Author</div>
     <div class="stat-value" id="skipAuthor">0</div>
   </div>
   <div class="stat-card skipped">
-    <div class="stat-label">📝 Encoding</div>
+    <div class="stat-label">Encoding</div>
     <div class="stat-value" id="skipEncoding">0</div>
   </div>
   <div class="stat-card processed">
@@ -239,14 +239,14 @@
 
 <!-- Final summary -->
 <div id="summaryBox">
-  <h5>✓ Import Complete</h5>
+  <h5>Import Complete</h5>
   <div class="summary-grid">
-    <div>📥 Imported: <strong id="sumImported">0</strong></div>
-    <div>🔄 Duplicate: <strong id="sumDuplicate">0</strong></div>
-    <div>🌐 Language: <strong id="sumLanguage">0</strong></div>
-    <div>📚 Genre: <strong id="sumGenre">0</strong></div>
-    <div>✍️ Author: <strong id="sumAuthor">0</strong></div>
-    <div>📝 Encoding: <strong id="sumEncoding">0</strong></div>
+    <div>Imported: <strong id="sumImported">0</strong></div>
+    <div>Duplicate: <strong id="sumDuplicate">0</strong></div>
+    <div>Language: <strong id="sumLanguage">0</strong></div>
+    <div>Genre: <strong id="sumGenre">0</strong></div>
+    <div>Author: <strong id="sumAuthor">0</strong></div>
+    <div>Encoding: <strong id="sumEncoding">0</strong></div>
   </div>
 </div>
 
@@ -331,7 +331,7 @@
     }
 
     // Parse SKIP CODE
-    const skipCodeMatch = line.match(/SKIP CODE:\s*(\d+)/);
+    const skipCodeMatch = line.match(/Skip Code:\s*(\d+)/);
     if (skipCodeMatch) {
       const code = parseInt(skipCodeMatch[1]);
       if (code === 0) {
@@ -364,7 +364,7 @@
     };
     document.getElementById('cntImported').textContent = '0';
     document.getElementById('cntProcessed').textContent = '0';
-    document.getElementById('cntTotal').textContent = '—';
+    document.getElementById('cntTotal').textContent = '0';
     document.getElementById('skipDuplicate').textContent = '0';
     document.getElementById('skipLanguage').textContent = '0';
     document.getElementById('skipGenre').textContent = '0';

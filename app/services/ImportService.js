@@ -276,12 +276,6 @@ async function processBook(file, index, total, existing, encodingStats, language
 
         Log(`Encoding: ${parsed.encoding}`);
         Log(`Language: ${book.language || 'unknown'}`);
-        if (parsed.authors.length > 0) {
-            Log(`Authors: ${parsed.authors.map(a => a.lastname).join(', ')}`);
-        }
-        if (parsed.genres.length > 0) {
-            Log(`Genres: ${parsed.genres.join(', ')}`);
-        }
 
         encodingStats.add(parsed.encoding);
         languageStats.add(parsed.book.language);
@@ -290,8 +284,8 @@ async function processBook(file, index, total, existing, encodingStats, language
         if (existing.has(book.hash)) {
             fs.unlinkSync(file);
             stats[1]++; // duplicate
-            Log(`SKIP CODE: 1`);
-            Log(`Skip reason: ${getSkipMessage(1)} (hash: ${book.hash.substring(0, 16)}...)`);
+            Log(`Skip Code: 1`);
+            Log(`Skip Reason: ${getSkipMessage(1)} (hash: ${book.hash.substring(0, 16)}...)`);
             Log(`Deleted: true`);
             Log(`Time: ${Date.now() - bookStart}ms`);
             Log("\n");
@@ -308,30 +302,8 @@ async function processBook(file, index, total, existing, encodingStats, language
         if (skipCode > 0) {
             stats[skipCode]++;
             
-            Log(`SKIP CODE: ${skipCode}`);
-            Log(`Skip reason: ${getSkipMessage(skipCode)}`);
-            
-            // Add specific details based on code
-            if (skipCode === 2 || skipCode === 3) {
-                Log(`Language: ${book.language}`);
-            }
-            if (skipCode === 4 || skipCode === 5) {
-                Log(`Encoding: ${parsed.encoding}`);
-            }
-            if (skipCode === 6 || skipCode === 7) {
-                Log(`Genres: ${parsed.genres.join(', ')}`);
-                if (skipCode === 6) {
-                    const blocked = parsed.genres.filter(g => IMPORT_BLOCKED_GENRES?.includes(g));
-                    Log(`Blocked genre: ${blocked.join(', ')}`);
-                }
-            }
-            if (skipCode === 8) {
-                const authorNames = parsed.authors.map(a => 
-                    `${a.firstname} ${a.middlename || ""} ${a.lastname}`.replace(/\s+/g, " ").trim()
-                );
-                Log(`Author: ${authorNames.join(', ')}`);
-            }
-            
+            Log(`Skip Code: ${skipCode}`);
+            Log(`Skip Reason: ${getSkipMessage(skipCode)}`);
             Log(`Time: ${Date.now() - bookStart}ms`);
             Log("\n");
             fs.unlinkSync(file);
@@ -350,17 +322,17 @@ async function processBook(file, index, total, existing, encodingStats, language
         importedBooks.push(book);
         stats[0]++; // success
 
-        Log(`SKIP CODE: 0`);
-        Log(`Status: IMPORTED ✓`);
+        Log(`Skip Code: 0`);
+        Log(`Status: IMPORTED`);
 
         if (parsed.authors.length > 0) {
             for (const a of parsed.authors) {
                 const author = AuthorModel.getOrCreate(a.firstname, a.middlename, a.lastname);
                 BookAuthorModel.link(book.book_id, author.author_id);
-                Log(`  Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
+                Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
             }
         } else {
-            Log(`  Author: (none - using default)`);
+            Log(`Author: default`);
             const defaultAuthor = AuthorModel.getOrCreate("Unknown", null, "Author");
             BookAuthorModel.link(book.book_id, defaultAuthor.author_id);
         }
@@ -369,23 +341,23 @@ async function processBook(file, index, total, existing, encodingStats, language
             for (const g of parsed.genres) {
                 const genre = GenreModel.getOrCreate(g);
                 if (genre) BookGenreModel.link(book.book_id, genre.genre_id);
-                Log(`  Genre: ${g}`);
+                Log(`Genre: ${g}`);
             }
         } else {
-            Log(`  Genre: (none)`);
+            Log(`Genre: none`);
         }
 
         if (parsed.series.length) {
             for (const s of parsed.series) {
                 const serie = SerieModel.getOrCreate(s.title);
                 BookSerieModel.link(book.book_id, serie.serie_id, s.number);
-                Log(`  Serie: ${s.title} (#${s.number || "?"})`);
+                Log(`Serie: ${s.title} (#${s.number || "?"})`);
             }
         }
 
         const dest = path.join(FILES_DIR, `${book.hash}.fb2`);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        Log(`  Copy file to: ${dest}`);
+        Log(`Copy file to: ${dest}`);
 
         try {
             const buffer = fs.readFileSync(file);
@@ -393,16 +365,16 @@ async function processBook(file, index, total, existing, encodingStats, language
             const xml = iconv.decode(buffer, encoding);
             const cleanedXml = removeBinaryNodes(xml);
             fs.writeFileSync(dest, cleanedXml, "utf8");
-            Log(`  Copy result: OK`);
+            Log(`Copy result: OK`);
         } catch (e) {
-            Log(`  Copy result: Failed (${e.message})`);
+            Log(`Copy result: Failed (${e.message})`);
         }
 
         fs.unlinkSync(file);
 
         const bookTime = Date.now() - bookStart;
-        Log(`  Deleted: true`);
-        Log(`  Time: ${bookTime} ms`);
+        Log(`Deleted: true`);
+        Log(`Time: ${bookTime} ms`);
         Log("\n");
 
         return { totalSize: totalSize + fileSize };
@@ -418,8 +390,8 @@ async function processBook(file, index, total, existing, encodingStats, language
         
         stats[errorCode]++;
         
-        Log(`SKIP CODE: ${errorCode}`);
-        Log(`Skip reason: ${getSkipMessage(errorCode)}`);
+        Log(`Skip Code: ${errorCode}`);
+        Log(`Skip Reason: ${getSkipMessage(errorCode)}`);
         Log(`Error: ${e.message}`);
         Log("\n");
         
@@ -485,21 +457,6 @@ async function importBooks(onLog) {
 
     Log(`Found ${total} files for importing...`);
     Log(`Batch size: ${BATCH_SIZE} files per batch`);
-    Log(``);
-    Log(`Skip codes legend:`);
-    Log(`  0 = IMPORTED (success)`);
-    Log(`  1 = Duplicate book`);
-    Log(`  2 = Language not allowed`);
-    Log(`  3 = Language blocked`);
-    Log(`  4 = Encoding not allowed`);
-    Log(`  5 = Encoding blocked`);
-    Log(`  6 = Genre blocked`);
-    Log(`  7 = Genre not allowed`);
-    Log(`  8 = Author blocked`);
-    Log(`  9 = XML parse failed`);
-    Log(` 10 = File read error`);
-    Log(` 11 = Other error`);
-    Log(``);
     
     const totalStart = Date.now();
 
@@ -569,52 +526,6 @@ async function importBooks(onLog) {
     
     const imported = stats[0];
     const skipped = total - imported;
-    const importPercentage = total > 0 ? Math.round(imported / total * 100) : 0;
-    const skipPercentage = total > 0 ? Math.round(skipped / total * 100) : 0;
-    
-    Log(`IMPORTED (code 0): ${imported} (${importPercentage}%)`);
-    Log(`SKIPPED (codes 1-11): ${skipped} (${skipPercentage}%)`);
-    Log(``);
-    Log(`Breakdown by skip code:`);
-    Log(`  Code  Description                          Count  Percentage`);
-    Log(`  ────  ───────────────────────────────────  ─────  ──────────`);
-    
-    const skipDetails = [
-        { code: 1, desc: "Duplicate book" },
-        { code: 2, desc: "Language not allowed" },
-        { code: 3, desc: "Language blocked" },
-        { code: 4, desc: "Encoding not allowed" },
-        { code: 5, desc: "Encoding blocked" },
-        { code: 6, desc: "Genre blocked" },
-        { code: 7, desc: "Genre not allowed" },
-        { code: 8, desc: "Author blocked" },
-        { code: 9, desc: "XML parse failed" },
-        { code: 10, desc: "File read error" },
-        { code: 11, desc: "Other error" }
-    ];
-    
-    for (const detail of skipDetails) {
-        const count = stats[detail.code] || 0;
-        if (count > 0) {
-            const percentage = total > 0 ? Math.round(count / total * 100) : 0;
-            const paddedDesc = detail.desc.padEnd(35, ' ');
-            const paddedCount = String(count).padStart(5, ' ');
-            const paddedPct = String(percentage).padStart(3, ' ');
-            Log(`  ${detail.code}    ${paddedDesc}  ${paddedCount}    ${paddedPct}%`);
-        }
-    }
-    
-    Log(``);
-    Log(`Encodings detected (${encodingStats.size} unique):`);
-    for (const enc of Array.from(encodingStats).sort()) {
-        Log(`  - ${enc}`);
-    }
-    Log(``);
-    Log(`Languages detected (${languageStats.size} unique):`);
-    for (const lng of Array.from(languageStats).sort()) {
-        Log(`  - ${lng}`);
-    }
-    Log(``);
 
     const totalMs = Date.now() - totalStart;
     const totalSec = (totalMs / 1000).toFixed(2);
@@ -622,29 +533,6 @@ async function importBooks(onLog) {
     const totalMB = totalKB / 1024;
     const kbPerSecond = totalKB / (totalMs / 1000);
     const mbPerSecond = totalMB / (totalMs / 1000);
-
-    Log(`========== PERFORMANCE STATISTICS ==========`);
-    Log(`Total data processed: ${totalKB.toFixed(2)} KB (${totalMB.toFixed(2)} MB)`);
-    Log(`Total time: ${totalMs} ms (${totalSec}s)`);
-    Log(`Average speed: ${kbPerSecond.toFixed(2)} KB/s (${mbPerSecond.toFixed(2)} MB/s)`);
-    Log(``);
-    Log(`========== FINAL SUMMARY ==========`);
-    Log(`  - Code 0 (IMPORTED): ${imported}`);
-    Log(`  - Code 1 (Duplicate): ${stats[1] || 0}`);
-    Log(`  - Code 2 (Language not allowed): ${stats[2] || 0}`);
-    Log(`  - Code 3 (Language blocked): ${stats[3] || 0}`);
-    Log(`  - Code 4 (Encoding not allowed): ${stats[4] || 0}`);
-    Log(`  - Code 5 (Encoding blocked): ${stats[5] || 0}`);
-    Log(`  - Code 6 (Genre blocked): ${stats[6] || 0}`);
-    Log(`  - Code 7 (Genre not allowed): ${stats[7] || 0}`);
-    Log(`  - Code 8 (Author blocked): ${stats[8] || 0}`);
-    Log(`  - Code 9 (XML parse failed): ${stats[9] || 0}`);
-    Log(`  - Code 10 (File read error): ${stats[10] || 0}`);
-    Log(`  ✗ Code 11 (Other error): ${stats[11] || 0}`);
-    Log(``);
-    Log(`Total skipped: ${skipped}`);
-    Log(`Total processed: ${total}`);
-    Log(`\nDone: ${totalSec}s`);
 
     // Store breakdown in global for API access
     global.importBreakdown = stats;

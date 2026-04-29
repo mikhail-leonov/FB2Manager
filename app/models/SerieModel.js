@@ -3,6 +3,19 @@ const crypto = require("crypto");
 const { pagedQuery } = require("../../core/dbpagination");
 const { BOOKS_PER_PAGE, ALL_COLUMNS } = require("../../core/constants");
 
+// ======================
+// PRECOMPILED STATEMENTS
+// ======================
+
+const getByIdStmt = db.prepare(`SELECT * FROM Series WHERE serie_id = ?`);
+const findByTitleStmt = db.prepare(`SELECT * FROM Series WHERE title = ?`);
+const insertStmt = db.prepare(`INSERT INTO Series (serie_id, title) VALUES (?, ?)`);
+const deleteStmt = db.prepare(`DELETE FROM Series WHERE serie_id = ?`);
+
+// ======================
+// MODEL
+// ======================
+
 class SerieModel {
 
     static getAll(req) {
@@ -14,31 +27,32 @@ class SerieModel {
         const validSortBy = ALL_COLUMNS.includes(sortBy) ? sortBy : "rowid";
         const validOrder = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
         const orderBy = `${validSortBy} ${validOrder}`;
+        return pagedQuery({ table: "Series", page, limit, orderBy });
+    }
 
-	return pagedQuery({ table: "Series", page, limit, orderBy });
-    }
     static getById(id) {
-        return db.prepare("SELECT * FROM Series WHERE serie_id = ?").get(id);
+        return getByIdStmt.get(id);
     }
+
     static findByTitle(title) {
-        return db.prepare("SELECT * FROM Series WHERE title = ?").get(title);
+        return findByTitleStmt.get(title);
     }
+
     static getOrCreate(title) {
         if (!title) return null;
-        const existing = this.findByTitle(title);
+        const existing = findByTitleStmt.get(title);
         if (existing) return existing;
-        const serie = {
-            serie_id: crypto.randomBytes(12).toString("hex"),
-            title
-        };
-        this.create(serie);
+        const serie = { serie_id: crypto.randomBytes(12).toString("hex"), title };
+        insertStmt.run(serie.serie_id, serie.title);
         return serie;
     }
+
     static create(serie) {
-        return db.prepare("INSERT INTO Series (serie_id, title) VALUES (?, ?)").run(serie.serie_id, serie.title);
+        return insertStmt.run(serie.serie_id, serie.title);
     }
+
     static delete(id) {
-        return db.prepare("DELETE FROM Series WHERE serie_id = ?").run(id);
+        return deleteStmt.run(id);
     }
 }
 
