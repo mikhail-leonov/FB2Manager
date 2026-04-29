@@ -23,6 +23,7 @@ const BooksFTSModel = require("../models/BooksFTSModel");
 const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
 
 const { LOG_FILE } = require("../../core/constants");
+const { db } = require("../../core/db");
 const { preprocess } = require("../services/TextPreprocessor");
 
 const {
@@ -460,14 +461,16 @@ async function importBooks(onLog) {
     
     const totalStart = Date.now();
 
-    // Process files in batches
-    for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
-        const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
-        const batch = files.slice(batchStart, batchEnd);
-        
-        Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
-        Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
-        
+// Process files in batches
+for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
+    const batch = files.slice(batchStart, batchEnd);
+    
+    Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
+    Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
+    
+    // Wrap the entire batch in a transaction
+    await db.transaction(async (tx) => {
         for (let i = 0; i < batch.length; i++) {
             const file = batch[i];
             const currentIndex = batchStart + i + 1;
@@ -481,7 +484,8 @@ async function importBooks(onLog) {
             const result = await processBook(
                 file, currentIndex, total, existing, 
                 encodingStats, languageStats, totalSize, 
-                Log, stats, importedBooks
+                Log, stats, importedBooks,
+                tx  // Pass transaction to processBook
             );
             
             totalSize = result.totalSize;
@@ -489,33 +493,34 @@ async function importBooks(onLog) {
             global.importProgress = processedCount;
             await flush();
         }
-        
-        const batchTime = Date.now() - totalStart;
-        Log(`\n✓ Batch completed in ${(batchTime / 1000).toFixed(2)}s`);
-        Log(`  Progress: ${processedCount}/${total} files (${Math.round(processedCount / total * 100)}%)`);
-        
-        // Show current stats after each batch
-        const imported = stats[0];
-        const skipped = total - imported;
-        Log(`  Imported: ${imported} (code 0)`);
-        Log(`  Skipped: ${skipped} (codes 1-11)`);
-        
-        // Show non-zero skip codes
-        const skipCodes = [1,2,3,4,5,6,7,8,9,10,11];
-        for (const code of skipCodes) {
-            if (stats[code] > 0) {
-                Log(`    code ${code}: ${stats[code]} (${getSkipMessage(code)})`);
-            }
+    });
+    
+    const batchTime = Date.now() - totalStart;
+    Log(`\nBatch completed in ${(batchTime / 1000).toFixed(2)}s`);
+    Log(`  Progress: ${processedCount}/${total} files (${Math.round(processedCount / total * 100)}%)`);
+    
+    // Show current stats after each batch
+    const imported = stats[0];
+    const skipped = total - imported;
+    Log(`  Imported: ${imported} (code 0)`);
+    Log(`  Skipped: ${skipped} (codes 1-11)`);
+    
+    // Show non-zero skip codes
+    const skipCodes = [1,2,3,4,5,6,7,8,9,10,11];
+    for (const code of skipCodes) {
+        if (stats[code] > 0) {
+            Log(`    code ${code}: ${stats[code]} (${getSkipMessage(code)})`);
         }
-        Log(``);
-        
-        if (global.gc && batchStart % (BATCH_SIZE * 5) === 0) {
-            global.gc();
-            Log(`Memory garbage collection triggered`);
-        }
-        
-        await flush();
     }
+    Log(``);
+    
+    if (global.gc && batchStart % (BATCH_SIZE * 5) === 0) {
+        global.gc();
+        Log(`Memory garbage collection triggered`);
+    }
+    
+    await flush();
+}
 
     removeEmptyDirs();
 
