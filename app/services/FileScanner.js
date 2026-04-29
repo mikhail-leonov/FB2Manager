@@ -32,17 +32,20 @@ async function extractZip(filePath) {
             .pipe(unzipper.Extract({ path: finalDir }))
             .promise();
 
+        // delete ONLY after successful extraction
         fs.unlinkSync(filePath);
 
-        console.log(`Extracted zip: ${filePath} → ${finalDir}`);
+        console.log(`Extracted zip and deleted: ${filePath}`);
         return finalDir;
+
     } catch (err) {
         console.error(`Error extracting zip ${filePath}:`, err.message);
+
+        // do NOT delete zip if extraction failed
         return null;
     }
 }
-
-function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
+async function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
     if (!fs.existsSync(dir)) {
         return fileList;
     }
@@ -53,19 +56,17 @@ function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
         const fullPath = path.join(dir, entry.name);
 
         if (entry.isDirectory()) {
-            getAllFiles(fullPath, fileList);
+            await getAllFiles(fullPath, fileList);
 
         } else if (isZip(fullPath)) {
-            const extractedDir = extractZip(fullPath);
+            const extractedDir = await extractZip(fullPath);
 
             if (extractedDir && fs.existsSync(extractedDir)) {
-                getAllFiles(extractedDir, fileList);
+                await getAllFiles(extractedDir, fileList);
             }
-            fs.unlinkSync(fullPath);
 
         } else if (isFb2(fullPath)) {
             fileList.push(fullPath);
-            fs.unlinkSync(fullPath);
 
         } else {
             try {
@@ -80,27 +81,9 @@ function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
     return fileList;
 }
 
-// remove empty directories recursively
-function removeEmptyDirs(dir = UPLOAD_DIR) {
-    if (!fs.existsSync(dir)) return;
-    const entries = fs.readdirSync(dir);
-    if (entries.length === 0 && dir !== UPLOAD_DIR) {
-        fs.rmdirSync(dir);
-        return;
-    }
-    for (const entry of entries) {
-        const fullPath = path.join(dir, entry);
-        if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
-            removeEmptyDirs(fullPath);
-        }
-    }
-    const after = fs.readdirSync(dir);
-    if (after.length === 0 && dir !== UPLOAD_DIR) {
-        fs.rmdirSync(dir);
-    }
-}
-
 module.exports = {
     getAllFiles,
-    removeEmptyDirs
+    extractZip,     // optional, if you want direct access
+    isFb2,          // optional
+    isZip           // optional
 };
