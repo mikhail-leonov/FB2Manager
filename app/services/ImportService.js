@@ -23,7 +23,7 @@ const BooksFTSModel = require("../models/BooksFTSModel");
 const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
 
 const { LOG_FILE } = require("../../core/constants");
-const { db } = require("../../core/db");
+const db = require("../../core/db");
 const { preprocess } = require("../services/TextPreprocessor");
 
 const {
@@ -469,8 +469,10 @@ for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
     Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
     Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
     
-    // Wrap the entire batch in a transaction
-    await db.transaction(async (tx) => {
+    // Start transaction for the batch
+    db.prepare('BEGIN TRANSACTION').run();
+    
+    try {
         for (let i = 0; i < batch.length; i++) {
             const file = batch[i];
             const currentIndex = batchStart + i + 1;
@@ -484,8 +486,7 @@ for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
             const result = await processBook(
                 file, currentIndex, total, existing, 
                 encodingStats, languageStats, totalSize, 
-                Log, stats, importedBooks,
-                tx  // Pass transaction to processBook
+                Log, stats, importedBooks
             );
             
             totalSize = result.totalSize;
@@ -493,7 +494,16 @@ for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
             global.importProgress = processedCount;
             await flush();
         }
-    });
+        
+        // Commit the transaction if all went well
+        db.prepare('COMMIT').run();
+        
+    } catch (error) {
+        // Rollback on any error
+        db.prepare('ROLLBACK').run();
+        Log(`\nBatch transaction failed, rolled back: ${error.message}`);
+        throw error;
+    }
     
     const batchTime = Date.now() - totalStart;
     Log(`\nBatch completed in ${(batchTime / 1000).toFixed(2)}s`);

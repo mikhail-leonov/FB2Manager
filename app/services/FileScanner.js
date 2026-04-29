@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const AdmZip = require("adm-zip");
+const unzipper = require("unzipper");
 
 const { FB2_EXTENSION, ZIP_EXTENSION, UPLOAD_DIR } = require("../../core/constants");
 
@@ -12,20 +12,28 @@ function isZip(filePath) {
     return path.extname(filePath).toLowerCase() === ZIP_EXTENSION;
 }
 
-function extractZip(filePath) {
+async function extractZip(filePath) {
     try {
-        const zip = new AdmZip(filePath);
         const parentDir = path.dirname(filePath);
         const baseName = path.basename(filePath, ZIP_EXTENSION);
+
         let extractDir = path.join(parentDir, baseName);
         let counter = 1;
         let finalDir = extractDir;
+
         while (fs.existsSync(finalDir)) {
             finalDir = `${extractDir}_${counter++}`;
         }
+
+        console.log(`Extracting zip: ${filePath} → ${finalDir}`);
         fs.mkdirSync(finalDir, { recursive: true });
-        zip.extractAllTo(finalDir, true);
+
+        await fs.createReadStream(filePath)
+            .pipe(unzipper.Extract({ path: finalDir }))
+            .promise();
+
         fs.unlinkSync(filePath);
+
         console.log(`Extracted zip: ${filePath} → ${finalDir}`);
         return finalDir;
     } catch (err) {
@@ -53,9 +61,11 @@ function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
             if (extractedDir && fs.existsSync(extractedDir)) {
                 getAllFiles(extractedDir, fileList);
             }
+            fs.unlinkSync(fullPath);
 
         } else if (isFb2(fullPath)) {
             fileList.push(fullPath);
+            fs.unlinkSync(fullPath);
 
         } else {
             try {

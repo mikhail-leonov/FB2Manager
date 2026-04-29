@@ -4,7 +4,9 @@ SETLOCAL EnableDelayedExpansion
 :: --- Configuration ---
 :: Since we are already inside the dir, we just set a label for the echo
 SET "PROJECT_LABEL=Books"
-SET "NODE_PACKAGES=better-sqlite3@^12.8.0 chardet@^2.1.1 fast-xml-parser@^5.7.1 iconv-lite@^0.7.2 twig@^3.0.0 adm-zip@^0.5.17 snowball-stemmer.jsx@^0.2.3 lodash@^4.18.1"
+SET "NODE_PACKAGES=better-sqlite3@^12.8.0 chardet@^2.1.1 fast-xml-parser@^5.7.1 iconv-lite@^0.7.2 twig@^3.0.0 adm-zip@^0.5.17 snowball-stemmer.jsx@^0.2.3 lodash@^4.18.1 unzipper@^0.12.3"
+    
+
 SET "REPO_URL=https://github.com/mikhail-leonov/FB2Manager"
 
 echo ====================================================

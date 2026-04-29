@@ -27,7 +27,8 @@
     "iconv-lite": "^0.7.2",
     "lodash": "^4.18.1",
     "snowball-stemmer.jsx": "^0.2.3",
-    "twig": "^3.0.0"
+    "twig": "^3.0.0",
+    "unzipper": "^0.12.3"
   },
   "engines": {
     "node": ">=14.0.0"

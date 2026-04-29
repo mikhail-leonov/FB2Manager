@@ -296,6 +296,28 @@
     const box = document.getElementById('logBox');
     const span = document.createElement('span');
     span.className = 'log-line';
+
+    // Apply colors based on content
+    if (line.includes('BATCH') || line.includes('====')) {
+        span.style.color = '#00ff9d'; // Bright green for batch headers
+    } else if (line.includes('Skip Code: 0') || line.includes('IMPORTED')) {
+        span.style.color = '#00ff9d'; // Green for success
+    } else if (line.match(/Skip Code: [1-9]/) || line.includes('Skip Reason:')) {
+        span.style.color = '#ffd700'; // Yellow for skips
+    } else if (line.includes('Error:') || line.includes('Failed')) {
+        span.style.color = '#ff4444'; // Red for errors
+    } else if (line.includes('File:') || line.includes('Index:')) {
+        span.style.color = '#00bfff'; // Cyan for file info
+    } else if (line.includes('Author:') || line.includes('Genre:') || line.includes('Serie:')) {
+        span.style.color = '#9d9dff'; // Purple for metadata
+    } else if (line.includes('Progress:') || line.includes('completed')) {
+        span.style.color = '#ff9d00'; // Orange for progress
+    } else if (line.startsWith('//')) {
+        span.style.color = '#2a3a2a'; // Dim for comments
+    } else {
+        span.style.color = '#888'; // Default gray
+    }
+
     span.textContent = line + '\n';
     box.appendChild(span);
     while (box.children.length > 300) {
@@ -473,7 +495,7 @@
       currentReader = null;
       btn.disabled = false;
       document.getElementById('spinner').style.display = 'none';
-      document.getElementById('btnLabel').textContent = '▶ Run Import';
+      document.getElementById('btnLabel').textContent = 'Run Import';
     }
   }
 </script>
