@@ -81,8 +81,31 @@ async function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
     return fileList;
 }
 
+// remove empty directories recursively
+function removeEmptyDirs(dir = UPLOAD_DIR) {
+    if (!fs.existsSync(dir)) return;
+    const entries = fs.readdirSync(dir);
+    if (entries.length === 0 && dir !== UPLOAD_DIR) {
+        fs.rmdirSync(dir);
+        return;
+    }
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry);
+        if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+            removeEmptyDirs(fullPath);
+        }
+    }
+    const after = fs.readdirSync(dir);
+    if (after.length === 0 && dir !== UPLOAD_DIR) {
+        fs.rmdirSync(dir);
+    }
+}
+
+
+
 module.exports = {
     getAllFiles,
+    removeEmptyDirs,
     extractZip,     // optional, if you want direct access
     isFb2,          // optional
     isZip           // optional

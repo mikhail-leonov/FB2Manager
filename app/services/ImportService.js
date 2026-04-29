@@ -419,7 +419,7 @@ async function importBooks(onLog) {
         if (onLog) onLog(msg);
     }
 
-    const files = getAllFiles();
+    const files = await getAllFiles();
     let total = files.length;
 
     if (total === 0) {
@@ -461,76 +461,76 @@ async function importBooks(onLog) {
     
     const totalStart = Date.now();
 
-// Process files in batches
-for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
-    const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
-    const batch = files.slice(batchStart, batchEnd);
-    
-    Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
-    Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
-    
-    // Start transaction for the batch
-    db.prepare('BEGIN TRANSACTION').run();
-    
-    try {
-        for (let i = 0; i < batch.length; i++) {
-            const file = batch[i];
-            const currentIndex = batchStart + i + 1;
+    // Process files in batches
+    for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, total);
+        const batch = files.slice(batchStart, batchEnd);
+        
+        Log(`\n========== BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} ==========`);
+        Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
+        
+        // Start transaction for the batch
+        db.prepare('BEGIN TRANSACTION').run();
+        
+        try {
+            for (let i = 0; i < batch.length; i++) {
+                const file = batch[i];
+                const currentIndex = batchStart + i + 1;
+                
+                Log(`------------------------------------------------------------------`);
+                Log(`Index: ${currentIndex}/${total} (Batch progress: ${i + 1}/${batch.length})`);
+                Log(`------------------------------------------------------------------`);
+                
+                global.importProgress = currentIndex;
+                
+                const result = await processBook(
+                    file, currentIndex, total, existing, 
+                    encodingStats, languageStats, totalSize, 
+                    Log, stats, importedBooks
+                );
+                
+                totalSize = result.totalSize;
+                processedCount++;
+                global.importProgress = processedCount;
+                await flush();
+            }
             
-            Log(`------------------------------------------------------------------`);
-            Log(`Index: ${currentIndex}/${total} (Batch progress: ${i + 1}/${batch.length})`);
-            Log(`------------------------------------------------------------------`);
+            // Commit the transaction if all went well
+            db.prepare('COMMIT').run();
             
-            global.importProgress = currentIndex;
-            
-            const result = await processBook(
-                file, currentIndex, total, existing, 
-                encodingStats, languageStats, totalSize, 
-                Log, stats, importedBooks
-            );
-            
-            totalSize = result.totalSize;
-            processedCount++;
-            global.importProgress = processedCount;
-            await flush();
+        } catch (error) {
+            // Rollback on any error
+            db.prepare('ROLLBACK').run();
+            Log(`\nBatch transaction failed, rolled back: ${error.message}`);
+            throw error;
         }
         
-        // Commit the transaction if all went well
-        db.prepare('COMMIT').run();
+        const batchTime = Date.now() - totalStart;
+        Log(`\nBatch completed in ${(batchTime / 1000).toFixed(2)}s`);
+        Log(`  Progress: ${processedCount}/${total} files (${Math.round(processedCount / total * 100)}%)`);
         
-    } catch (error) {
-        // Rollback on any error
-        db.prepare('ROLLBACK').run();
-        Log(`\nBatch transaction failed, rolled back: ${error.message}`);
-        throw error;
-    }
-    
-    const batchTime = Date.now() - totalStart;
-    Log(`\nBatch completed in ${(batchTime / 1000).toFixed(2)}s`);
-    Log(`  Progress: ${processedCount}/${total} files (${Math.round(processedCount / total * 100)}%)`);
-    
-    // Show current stats after each batch
-    const imported = stats[0];
-    const skipped = total - imported;
-    Log(`  Imported: ${imported} (code 0)`);
-    Log(`  Skipped: ${skipped} (codes 1-11)`);
-    
-    // Show non-zero skip codes
-    const skipCodes = [1,2,3,4,5,6,7,8,9,10,11];
-    for (const code of skipCodes) {
-        if (stats[code] > 0) {
-            Log(`    code ${code}: ${stats[code]} (${getSkipMessage(code)})`);
+        // Show current stats after each batch
+        const imported = stats[0];
+        const skipped = total - imported;
+        Log(`  Imported: ${imported} (code 0)`);
+        Log(`  Skipped: ${skipped} (codes 1-11)`);
+        
+        // Show non-zero skip codes
+        const skipCodes = [1,2,3,4,5,6,7,8,9,10,11];
+        for (const code of skipCodes) {
+            if (stats[code] > 0) {
+                Log(`    code ${code}: ${stats[code]} (${getSkipMessage(code)})`);
+            }
         }
+        Log(``);
+        
+        if (global.gc && batchStart % (BATCH_SIZE * 5) === 0) {
+            global.gc();
+            Log(`Memory garbage collection triggered`);
+        }
+        
+        await flush();
     }
-    Log(``);
-    
-    if (global.gc && batchStart % (BATCH_SIZE * 5) === 0) {
-        global.gc();
-        Log(`Memory garbage collection triggered`);
-    }
-    
-    await flush();
-}
 
     removeEmptyDirs();
 
