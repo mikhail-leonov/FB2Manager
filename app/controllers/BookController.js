@@ -21,6 +21,10 @@ class BookController {
         }
         return renderBookPage(res, book);
     }
+    static async favorite(req, res) {
+        const result = BookModel.getFavorite(req);
+        return respond( req, res, "Books", result.data, true, BOOK_COLUMNS.hidden, result.pagination );
+    }
 }
 
 module.exports = BookController;

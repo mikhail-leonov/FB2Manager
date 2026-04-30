@@ -83,6 +83,7 @@ async function router(req, res) {
     const routes = [
         ["GET", "/",          		HomeController.index],
         ["GET", "/search",     		HomeController.index],
+        ["GET", "/favorite",   		BookController.favorite],
         ["GET", "/books",     		BookController.index],
         ["GET", "/import",              ImportController.run],
         ["GET", "/import-stream",       ImportController.stream],
@@ -96,18 +97,6 @@ async function router(req, res) {
         ["GET", "/genres",    		GenreController.index],
         ["GET", "/genre/:id", 		GenreController.show],
         ["GET", "/genre/:id/books", 	GenreController.books],
-
-["GET", "/debug-books", async (req, res, params) => {
-    const count = db.prepare("SELECT COUNT(*) as c FROM Books").get();
-    const sample = db.prepare("SELECT book_id, title FROM Books LIMIT 5").all();
-    
-    res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
-    res.end(JSON.stringify({
-        totalBooks: count.c,
-        sample: sample,
-        message: sample.length === 0 ? "No books found!" : "Books exist"
-    }, null, 2));
-}],
 
         ["GET", "/series",    		SerieController.index],
         ["GET", "/serie/:id", 		SerieController.show],
