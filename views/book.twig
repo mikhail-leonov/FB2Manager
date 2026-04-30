@@ -21,7 +21,7 @@
       <span class="terminal-title">Read {{ title }}</span>
 
       <div class="text-end mb-3">
-        <a href="#" class="like-btn" data-book-id="{{ title }}"  data-liked="{{ book.Liked ? 'true' : 'false' }}">{% if book.Liked %}★{% else %}☆{% endif %}</a>
+        <a href="#" class="like-btn" data-book-id="{{ book_id }}"  data-liked="{{ book.Liked ? 'true' : 'false' }}">{% if book.Liked %}★{% else %}☆{% endif %}</a>
       </div>
 
     </div>

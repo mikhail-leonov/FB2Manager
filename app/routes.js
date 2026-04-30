@@ -16,6 +16,8 @@ const SerieController = require("./controllers/SerieController");
 const DebugController = require("./controllers/DebugController");
 const LikeController = require("./controllers/LikeController");
 
+const BookModel = require("./models/BookModel");
+
 function match(url, route) {
     const params = {};
     const u = url.split("/");
@@ -63,21 +65,28 @@ async function router(req, res) {
     }
 
     if (url.startsWith(FILES_PREFIX)) {
-        const file = url.split(FILES_PREFIX)[1];
-        const filePath = path.normalize(path.join(FILES_DIR, file + ".fb2"));
+        const hash = url.split(FILES_PREFIX)[1];
+        const filePath = path.normalize(path.join(FILES_DIR, hash + ".fb2"));
+
         if (!filePath.startsWith(FILES_DIR)) {
             res.writeHead(403);
             return res.end("Forbidden");
         }
         if (fs.existsSync(filePath)) {
+            const book_id = BookModel.getBookIdByHash(hash);
+            if (!book_id) {
+                res.writeHead(404);
+                return res.end("Book not found in database");
+            }
             const buffer = fs.readFileSync(filePath);
             const content = renderFb2ToHtml(buffer);
-            const html = await render("book.twig", { title: file, content });
+            const html = await render("book.twig", { title: book_id, content, book_id: book_id  });
+
             res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
             return res.end(html);
         }
         res.writeHead(404);
-        return res.end("File not found");
+        return res.end("File not found: " + filePath);
     }
 
     const routes = [

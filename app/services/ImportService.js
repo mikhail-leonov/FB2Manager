@@ -300,6 +300,29 @@ async function processBook(file, index, total, existing, encodingStats, language
             encoding: parsed.encoding
         });
 
+        if (parsed.authors.length > 0) {
+            for (const a of parsed.authors) {
+                Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
+            }
+        } else {
+            Log(`Author: default`);
+        }
+
+        if (parsed.genres.length > 0) {
+            for (const g of parsed.genres) {
+                Log(`Genre: ${g}`);
+            }
+        } else {
+            Log(`Genre: none`);
+        }
+
+        if (parsed.series.length) {
+            for (const s of parsed.series) {
+                Log(`Serie: ${s.title} (#${s.number || "?"})`);
+            }
+        }
+
+
         if (skipCode > 0) {
             stats[skipCode]++;
             
@@ -330,10 +353,8 @@ async function processBook(file, index, total, existing, encodingStats, language
             for (const a of parsed.authors) {
                 const author = AuthorModel.getOrCreate(a.firstname, a.middlename, a.lastname);
                 BookAuthorModel.link(book.book_id, author.author_id);
-                Log(`Author: ${a.lastname}, ${a.firstname}${a.middlename ? " " + a.middlename : ""}`);
             }
         } else {
-            Log(`Author: default`);
             const defaultAuthor = AuthorModel.getOrCreate("Unknown", null, "Author");
             BookAuthorModel.link(book.book_id, defaultAuthor.author_id);
         }
@@ -342,17 +363,13 @@ async function processBook(file, index, total, existing, encodingStats, language
             for (const g of parsed.genres) {
                 const genre = GenreModel.getOrCreate(g);
                 if (genre) BookGenreModel.link(book.book_id, genre.genre_id);
-                Log(`Genre: ${g}`);
             }
-        } else {
-            Log(`Genre: none`);
         }
 
         if (parsed.series.length) {
             for (const s of parsed.series) {
                 const serie = SerieModel.getOrCreate(s.title);
                 BookSerieModel.link(book.book_id, serie.serie_id, s.number);
-                Log(`Serie: ${s.title} (#${s.number || "?"})`);
             }
         }
 

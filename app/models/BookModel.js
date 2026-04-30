@@ -55,52 +55,58 @@ class BookModel {
         };
     }
 
-static getFavorite(req) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const page = parseInt(url.searchParams.get("page") || "1", 10);
-    const limit = parseInt(url.searchParams.get("limit") ?? BOOKS_PER_PAGE, 10);
-    const sortBy = url.searchParams.get("sort") || "rowid";
-    const sortOrder = url.searchParams.get("order") || "DESC";
-
-    const validSortBy = ALL_COLUMNS.includes(sortBy) ? sortBy : "rowid";
-    const validOrder = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
-    const orderBy = `${validSortBy} ${validOrder}`;
-
-    const result = pagedQuery({
-        table: "Books INNER JOIN Likes ON Books.book_id = Likes.book_id",
-        select: "Books.book_id",
-        page,
-        limit,
-        orderBy
-    });
-
-    const ids = result.data.map(r => r.book_id);
-
-    return {
-        data: this.getByIds(ids),
-        pagination: result.pagination
-    };
-}
+    static getFavorite(req) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") ?? BOOKS_PER_PAGE, 10);
+        const sortBy = url.searchParams.get("sort") || "rowid";
+        const sortOrder = url.searchParams.get("order") || "DESC";
+    
+        const validSortBy = ALL_COLUMNS.includes(sortBy) ? sortBy : "rowid";
+        const validOrder = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
+        const orderBy = `${validSortBy} ${validOrder}`;
+    
+        const result = pagedQuery({
+            table: "Books INNER JOIN Likes ON Books.book_id = Likes.book_id",
+            select: "Books.book_id",
+            page,
+            limit,
+            orderBy
+        });
+    
+        const ids = result.data.map(r => r.book_id);
+    
+        return {
+            data: this.getByIds(ids),
+            pagination: result.pagination
+        };
+    }
 
     static getById(id) {
         const result = this.getByIds([id]);
         return result.length ? result[0] : null;
     }
 
-static getByIds(ids) {
-    if (!Array.isArray(ids) || ids.length === 0) return [];
-    
-    const placeholders = ids.map(() => '?').join(',');
-    const stmt = db.prepare(`
-        SELECT title, book_id, hash, annotation 
-        FROM Books 
-        WHERE book_id IN (${placeholders})
-    `);
-    
-    const rows = stmt.all(...ids);
-    return this.populateBooks(rows);
-}
+    static getBookIdByHash(hash) {
+        const stmt = db.prepare(`SELECT book_id FROM Books WHERE hash = ?`);
+        const result = stmt.get(hash);
+        return result ? result.book_id : null;
+    }
 
+    static getByIds(ids) {
+        if (!Array.isArray(ids) || ids.length === 0) return [];
+        
+        const placeholders = ids.map(() => '?').join(',');
+        const stmt = db.prepare(`
+            SELECT title, book_id, hash, annotation 
+            FROM Books 
+            WHERE book_id IN (${placeholders})
+        `);
+        
+        const rows = stmt.all(...ids);
+        return this.populateBooks(rows);
+    }
+    
     static search(req) {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
