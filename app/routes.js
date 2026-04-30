@@ -1,9 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const { FILES_DIR, FILES_PREFIX, JS_PREFIX, CSS_PREFIX, CONTENT_TYPE_JS, CONTENT_TYPE_CSS, CONTENT_TYPE_HTML } = require("../core/constants");
+const { FILES_DIR, FILES_PREFIX, CONTENT_TYPE_JSON, JS_PREFIX, CSS_PREFIX, CONTENT_TYPE_JS, CONTENT_TYPE_CSS, CONTENT_TYPE_HTML } = require("../core/constants");
 const { render } = require("../core/view");
 const { renderFb2ToHtml } = require("./services/Fb2Renderer");
+const db = require("../core/db");
 
 const HomeController = require("./controllers/HomeController");
 const BookController = require("./controllers/BookController");
@@ -95,6 +96,18 @@ async function router(req, res) {
         ["GET", "/genres",    		GenreController.index],
         ["GET", "/genre/:id", 		GenreController.show],
         ["GET", "/genre/:id/books", 	GenreController.books],
+
+["GET", "/debug-books", async (req, res, params) => {
+    const count = db.prepare("SELECT COUNT(*) as c FROM Books").get();
+    const sample = db.prepare("SELECT book_id, title FROM Books LIMIT 5").all();
+    
+    res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
+    res.end(JSON.stringify({
+        totalBooks: count.c,
+        sample: sample,
+        message: sample.length === 0 ? "No books found!" : "Books exist"
+    }, null, 2));
+}],
 
         ["GET", "/series",    		SerieController.index],
         ["GET", "/serie/:id", 		SerieController.show],

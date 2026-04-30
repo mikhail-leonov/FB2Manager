@@ -60,12 +60,19 @@ class BookModel {
         return result.length ? result[0] : null;
     }
 
-    static getByIds(ids) {
-        if (!Array.isArray(ids) || ids.length === 0) return [];
-
-        const rows = getBooksByIdsStmt.all({ ids: ids.join(",") });
-        return this.populateBooks(rows);
-    }
+static getByIds(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+    
+    const placeholders = ids.map(() => '?').join(',');
+    const stmt = db.prepare(`
+        SELECT title, book_id, hash, annotation 
+        FROM Books 
+        WHERE book_id IN (${placeholders})
+    `);
+    
+    const rows = stmt.all(...ids);
+    return this.populateBooks(rows);
+}
 
     static search(req) {
         const url = new URL(req.url, `http://${req.headers.host}`);

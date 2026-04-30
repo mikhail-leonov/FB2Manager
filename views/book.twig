@@ -1,36 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  {% include "partials/header.twig" %}
   <title>FB2 Collection</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
-  <link href="/css/style.css" rel="stylesheet">
-  <style>
-    .terminal-wrap { min-height: 700px;  }
-    #logBox { height: 680px; }
-    .log-line { font-size: 1.2rem; }
-  </style>
 </head>
 <body>
 
 <div class="page-header">
   <h1>FB2 <span>Read</span></h1>
   <div class="nav-panel d-flex gap-2 p-2">
-    <a href="/" class="btn btn-outline-light btn-sm">Home</a>
-    <a href="/import" class="btn btn-outline-light btn-sm">Import</a>
-    <a href="/books" class="btn btn-outline-light btn-sm">Books</a>
-    <a href="/authors" class="btn btn-outline-light btn-sm">Authors</a>
-    <a href="/genres" class="btn btn-outline-light btn-sm">Genres</a>
-    <a href="/series" class="btn btn-outline-light btn-sm">Series</a>
-    <a href="/debug" class="btn btn-outline-light btn-sm">Debug</a>
-    <form action="/search" method="GET" class="topbar-search">
-      <input type="text" name="q" placeholder="Search..." />
-    </form>
+    {% include "partials/menu.twig" %}
   </div>
 </div>
 
-  <!-- Terminal log -->
   <div class="terminal-wrap">
     <div class="terminal-header">
       <div class="dot dot-r"></div>
@@ -39,44 +21,11 @@
       <span class="terminal-title">Read {{ title }}</span>
 
       <div class="text-end mb-3">
-        <a href="#" 
-		class="like-btn" 
-		data-book-id="{{ title }}" 
-		data-liked="{{ book.Liked ? 'true' : 'false' }}">
-			{% if book.Liked %}★{% else %}☆{% endif %}
-	</a>
+        <a href="#" class="like-btn" data-book-id="{{ title }}"  data-liked="{{ book.Liked ? 'true' : 'false' }}">{% if book.Liked %}★{% else %}☆{% endif %}</a>
       </div>
 
-<script>
-document.querySelector('.like-btn')?.addEventListener('click', async (e) => {
-  e.preventDefault();
-  const btn = e.currentTarget;
-  const bookId = btn.dataset.bookId;
-  const isLiked = btn.dataset.liked === 'true';
-  const action = isLiked ? 'unlike' : 'like';
-  
-  try {
-    const response = await fetch(`/like/${action}/${bookId}`);
-    const data = await response.json();
-    
-    if (data.success) {
-      if (data.action === 'liked') {
-        btn.dataset.liked = 'true';
-        btn.innerHTML = '★';
-      } else {
-        btn.dataset.liked = 'false';
-        btn.innerHTML = '☆';
-      }
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-});
-</script>
-
-
-
     </div>
+
     <div id="logBox">
       <span style="color:#2a3a2a">
         {{ content|raw }} 
@@ -85,6 +34,7 @@ document.querySelector('.like-btn')?.addEventListener('click', async (e) => {
   </div>
 
 
-  
+{% include "partials/footer.twig" %}
+
 </body>
 </html>

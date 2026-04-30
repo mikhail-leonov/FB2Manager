@@ -1,6 +1,7 @@
+// D:\Projects\Books\core\dbpagination.js
 const db = require("./db");
 const { paginate } = require("./pagination");
-const {BOOKS_PER_PAGE} = require("./constants");
+const { BOOKS_PER_PAGE } = require("./constants");
 
 function pagedQuery({
     table,
@@ -14,13 +15,20 @@ function pagedQuery({
     const safePage = Math.max(1, page);
     const safeLimit = Math.max(1, limit);
 
+    let whereClause = "";
+    let queryParams = [...params];
+    
+    if (where) {
+        whereClause = `WHERE ${where}`;
+    }
+
     const countSql = `
         SELECT COUNT(*) as c
         FROM ${table}
-        ${where ? "WHERE " + where : ""}
+        ${whereClause}
     `;
-
-    const total = db.prepare(countSql).get(...params).c;
+    
+    const total = db.prepare(countSql).get(...queryParams)?.c || 0;
 
     const pagination = paginate({
         page: safePage,
@@ -28,19 +36,26 @@ function pagedQuery({
         total
     });
 
+    // If no results, return early
+    if (total === 0) {
+        return {
+            data: [],
+            pagination
+        };
+    }
+
     const dataSql = `
         SELECT ${select}
         FROM ${table}
-        ${where ? "WHERE " + where : ""}
+        ${whereClause}
         ORDER BY ${orderBy}
         LIMIT ? OFFSET ?
     `;
-
-    const rows = db.prepare(dataSql).all(
-        ...params,
-        pagination.limit,
-        pagination.offset
-    );
+    
+    // Add pagination params
+    queryParams.push(pagination.limit, pagination.offset);
+    
+    const rows = db.prepare(dataSql).all(...queryParams);
 
     return {
         data: rows,
