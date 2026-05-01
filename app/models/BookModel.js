@@ -1,7 +1,3 @@
-// =============================
-// Constants
-// =============================
-
 const db = require("../../core/db");
 const { paginate } = require("../../core/pagination");
 const { pagedQuery } = require("../../core/dbpagination");

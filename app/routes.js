@@ -1,7 +1,3 @@
-// =============================
-// Constants
-// =============================
-
 const fs = require("fs");
 const path = require("path");
 
@@ -21,10 +17,6 @@ const DebugController = require("./controllers/DebugController");
 const LikeController = require("./controllers/LikeController");
 
 const BookModel = require("./models/BookModel");
-
-// =============================
-// Router
-// =============================
 
 function match(url, route) {
     const params = {};

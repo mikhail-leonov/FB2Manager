@@ -1,17 +1,10 @@
-// =============================
-// Constants
-// =============================
-
 const GenreModel = require("../models/GenreModel");
 const BookGenreModel = require("../models/BookGenreModel");
 const BookModel = require("../models/BookModel");
+
 const { respond, error } = require("../services/Response");
 const { GENRE_COLUMNS } = require("../services/tableColumns");
 const {BOOKS_PER_PAGE} = require("../../core/constants");
-
-// =============================
-// Controller
-// =============================
 
 class GenreController {
 

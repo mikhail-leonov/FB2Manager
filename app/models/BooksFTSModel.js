@@ -1,7 +1,3 @@
-// =============================
-// Constants
-// =============================
-
 const db = require("../../core/db");
 const { preprocess } = require("../services/TextPreprocessor");
 

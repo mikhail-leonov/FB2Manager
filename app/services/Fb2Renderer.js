@@ -1,20 +1,13 @@
-// =============================
-// Constants
-// =============================
-
 const { XMLParser } = require("fast-xml-parser");
 const iconv = require("iconv-lite");
 const { detectEncoding } = require("./encoding");
+
+
 const parser = new XMLParser({
     ignoreAttributes: false,
     parseTagValue: true,
     trimValues: true
 });
-
-
-// =============================
-// Service
-// =============================
 
 function escapeHtml(str) {
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

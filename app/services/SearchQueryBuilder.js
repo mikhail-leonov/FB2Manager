@@ -1,12 +1,4 @@
-// =============================
-// Constants
-// =============================
-
 const { preprocess } = require("./TextPreprocessor");
-
-// =============================
-// Service
-// =============================
 
 function buildSearchQuery(input) {
   if (!input) return "";

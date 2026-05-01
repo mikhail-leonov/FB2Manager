@@ -1,3 +1,4 @@
+<nav class="d-flex flex-wrap gap-2 align-items-center">
     <a href="/" class="btn btn-outline-light btn-sm">Home</a>
     <a href="/favorite" class="btn btn-outline-light btn-sm">Favorite</a>
     <a href="/books" class="btn btn-outline-light btn-sm">Books</a>
@@ -6,6 +7,10 @@
     <a href="/series" class="btn btn-outline-light btn-sm">Series</a>
     <a href="/import" class="btn btn-outline-light btn-sm">Import</a>
     <a href="/debug" class="btn btn-outline-light btn-sm">Debug</a>
-    <form action="/search" method="GET" class="topbar-search">
-      <input type="text" name="q" placeholder="Search..." />
+    
+    <form action="/search" method="GET" class="ms-auto">
+        <div class="input-group input-group-sm" style="width: 280px;">
+            <input type="text" name="q" class="form-control bg-dark text-light border-secondary" placeholder="Search...">
+        </div>
     </form>
+</nav>

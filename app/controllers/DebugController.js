@@ -1,15 +1,9 @@
-// =============================
-// Constants
-// =============================
-
 const DebugModel = require("../models/DebugModel");
+
 const { render } = require("../../core/view");
 const { renderTable, renderJson } = require("../services/ViewTable");
-const { CONTENT_TYPE_HTML } = require("../../core/constants");
 
-// =============================
-// Controller
-// =============================
+const { CONTENT_TYPE_HTML } = require("../../core/constants");
 
 class DebugController {
 

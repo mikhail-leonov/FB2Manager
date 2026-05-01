@@ -1,14 +1,7 @@
-// =============================
-// Constants
-// =============================
-
+// D:\Projects\Books\app\controllers\LikeController.js
 const LikeModel = require("../models/LikeModel");
 const BookModel = require("../models/BookModel");
 const { CONTENT_TYPE_JSON } = require("../../core/constants");
-
-// =============================
-// Controller
-// =============================
 
 class LikeController {
     

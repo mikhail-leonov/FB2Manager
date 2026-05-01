@@ -1,8 +1,5 @@
-// =============================
-// Constants
-// =============================
-
 const BookModel = require("../models/BookModel");
+
 const { render } = require("../../core/view");
 const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
@@ -10,10 +7,6 @@ const { BOOK_COLUMNS } = require("../services/tableColumns");
 const { paginate } = require("../../core/pagination");
 const { renderBookPage } = require("../renders/BookRender");
 const {BOOKS_PER_PAGE} = require("../../core/constants");
-
-// =============================
-// Controller
-// =============================
 
 class BookController {
 

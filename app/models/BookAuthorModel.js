@@ -1,7 +1,3 @@
-// =============================
-// Constants
-// =============================
-
 const db = require("../../core/db");
 const { BOOKS_PER_PAGE } = require("../../core/constants");
 const { pagedQuery } = require("../../core/dbpagination");

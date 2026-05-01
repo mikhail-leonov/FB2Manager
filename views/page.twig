@@ -1,36 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {% include "partials/header.twig" %}
-  <title>FB2 Collection</title>
+    {% include "partials/header.twig" %}
+    <title>FB2 Collection</title>
 </head>
-<body>
+<body class="bg-dark text-light">
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+        <h1 class="display-4 fw-bold">FB2 <span class="text-success">Collection</span></h1>
+        {% include "partials/menu.twig" %}
+    </div>
 
-<div class="page-header">
-  <h1>FB2 <span>Collection</span></h1>
-  <div class="nav-panel d-flex gap-2 p-2">
-    {% include "partials/menu.twig" %}
-  </div>
+    <div class="card bg-black border-secondary">
+        <div class="card-header d-flex align-items-center gap-2 bg-secondary border-0">
+            <div class="d-flex gap-1">
+                <div class="rounded-circle bg-danger" style="width:12px;height:12px;"></div>
+                <div class="rounded-circle bg-warning" style="width:12px;height:12px;"></div>
+                <div class="rounded-circle bg-success" style="width:12px;height:12px;"></div>
+            </div>
+            <span class="ms-2 fw-mono text-muted">Books {{ title }}</span>
+        </div>
+        
+        <div class="card-body p-0">
+            <div id="logBox" class="p-4 font-mono" style="background:#0a0a0a; min-height:620px; overflow-y:auto;">
+                {% if page %}
+                    {% include "partials/pagination.twig" %}
+                {% endif %}
+                
+                {{ content|raw }}
+            </div>
+        </div>
+    </div>
 </div>
 
-  <div class="terminal-wrap">
-    <div class="terminal-header">
-      <div class="dot dot-r"></div>
-      <div class="dot dot-y"></div>
-      <div class="dot dot-g"></div>
-      <span class="terminal-title">Books {{ title }}</span>
-    </div>
-
-    <div id="logBox">
-      <span style="color:#2a3a2a">
-        {% if page %}
-            {% include "partials/pagination.twig" %}
-        {% endif %}
-        {{ content|raw }} 
-      </span>
-    </div>
-  </div>
-
-  {% include "partials/footer.twig" %}
+{% include "partials/footer.twig" %}
 </body>
 </html>

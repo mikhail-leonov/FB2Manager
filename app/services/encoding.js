@@ -1,15 +1,7 @@
-// =============================
-// Constants
-// =============================
-
 const chardet = require("chardet");
 const iconv = require("iconv-lite");
+
 const { ENCODING_MAP } = require("../../core/constants");
-
-// =============================
-// Service
-// =============================
-
 
 function detectEncoding(buffer) {
     let encoding = chardet.detect(buffer) || "utf-8";

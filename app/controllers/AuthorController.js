@@ -1,17 +1,10 @@
-// =============================
-// Constants
-// =============================
-
 const AuthorModel = require("../models/AuthorModel");
 const BookAuthorModel = require("../models/BookAuthorModel");
 const BookModel = require("../models/BookModel");
 const {BOOKS_PER_PAGE} = require("../../core/constants");
+
 const { respond, error } = require("../services/Response");
 const { AUTHOR_COLUMNS } = require("../services/tableColumns");
-
-// =============================
-// Controller
-// =============================
 
 class AuthorController {
 

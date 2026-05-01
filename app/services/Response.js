@@ -1,18 +1,9 @@
-// =============================
-// Constants
-// =============================
-
-
 const { render } = require("../../core/view");
 const {
     CONTENT_TYPE_JSON,
     CONTENT_TYPE_HTML
 } = require("../../core/constants");
 const { renderTable, renderJson } = require("./ViewTable");
-
-// =============================
-// Service
-// =============================
 
 function getUrl(req) {
     return new URL(req.url, `http://${req.headers.host}`);

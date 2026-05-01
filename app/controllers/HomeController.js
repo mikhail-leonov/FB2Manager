@@ -1,14 +1,6 @@
-// =============================
-// Constants
-// =============================
-
 const { respond } = require("../services/Response");
 const { BOOK_COLUMNS } = require("../services/tableColumns");
 const BookModel = require("../models/BookModel");
-
-// =============================
-// Controller
-// =============================
 
 class HomeController {
     static async index(req, res) {
