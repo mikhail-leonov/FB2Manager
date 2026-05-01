@@ -162,13 +162,10 @@
     }
     
     btn.disabled = true;
-    document.getElementById('spinner').style.display = 'block';
     document.getElementById('btnLabel').textContent = 'Running…';
-    setStatus('running', 'running');
 
     document.getElementById('logBox').innerHTML = '<span style="color:#2a3a2a">// Import started...\n</span>';
     document.getElementById('progressWrap').classList.add('visible');
-    document.getElementById('summaryBox').classList.remove('visible');
     
     resetStats();
     

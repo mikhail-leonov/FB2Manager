@@ -10,55 +10,52 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h1 class="display-4 fw-bold">FB2 <span class="text-success">Import</span></h1>
+        {% include "partials/menu.twig" %}
+    </div>
+
+
+<!-- Standard Bootstrap 5 Button Group - Consistent Style -->
+<div class="mb-4">
+    <div class="btn-group flex-wrap" role="group" aria-label="Import Statistics">
+
+        <button type="button" class="btn btn-outline-warning align-items-center"  id="importBtn" onclick="startImport()" >
+            <span id="btnLabel">Run Import</span>
+        </button>
         
-        <div class="d-flex align-items-center gap-3">
-            <span id="statusBadge" class="badge bg-secondary fs-6 px-3 py-2">idle</span>
-            
-            <button id="importBtn" onclick="startImport()" 
-                    class="btn btn-success btn-lg d-flex align-items-center gap-2">
-                <span class="spinner-border spinner-border-sm" id="spinner" style="display:none;"></span>
-                <span id="btnLabel">Run Import</span>
-            </button>
-        </div>
+        <button type="button" class="btn btn-outline-primary" id="btnTotal">
+            Found : <span id="cntTotal">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnProcessed">
+            Processed : <span id="cntProcessed">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnImported">
+            Imported : <span id="cntImported">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnSkipDuplicate">
+            Duplicate : <span id="skipDuplicate">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnSkipLanguage">
+            Language : <span id="skipLanguage">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnSkipGenre">
+            Genre : <span id="skipGenre">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnSkipAuthor">
+            Author : <span id="skipAuthor">0</span>
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" id="btnSkipEncoding">
+            Encoding : <span id="skipEncoding">0</span>
+        </button>
+        
     </div>
-
-    {% include "partials/menu.twig" %}
-
-    <!-- Main stats row - as requested -->
-    <div class="stats-row mb-4">
-        <div class="stat-card total">
-            <div class="stat-label">Files Found</div>
-            <div class="stat-value" id="cntTotal">0</div>
-        </div>
-        <div class="stat-card processed">
-            <div class="stat-label">Processed</div>
-            <div class="stat-value" id="cntProcessed">0</div>
-        </div>
-        <div class="stat-card imported">
-            <div class="stat-label">Imported</div>
-            <div class="stat-value" id="cntImported">0</div>
-        </div>
-        <div class="stat-card skipped">
-            <div class="stat-label">Duplicate</div>
-            <div class="stat-value" id="skipDuplicate">0</div>
-        </div>
-        <div class="stat-card skipped">
-            <div class="stat-label">Language</div>
-            <div class="stat-value" id="skipLanguage">0</div>
-        </div>
-        <div class="stat-card skipped">
-            <div class="stat-label">Genre</div>
-            <div class="stat-value" id="skipGenre">0</div>
-        </div>
-        <div class="stat-card skipped">
-            <div class="stat-label">Author</div>
-            <div class="stat-value" id="skipAuthor">0</div>
-        </div>
-        <div class="stat-card skipped">
-            <div class="stat-label">Encoding</div>
-            <div class="stat-value" id="skipEncoding">0</div>
-        </div>
-    </div>
+</div>
 
     <!-- Progress Bar -->
     <div class="progress-wrap mb-4" id="progressWrap" style="display:none;">
@@ -75,32 +72,17 @@
     <div class="card bg-black border-secondary mb-4">
         <div class="card-header d-flex align-items-center gap-2 bg-secondary border-0">
             <div class="d-flex gap-1">
-                <div class="rounded-circle bg-danger" style="width:12px;height:12px;"></div>
-                <div class="rounded-circle bg-warning" style="width:12px;height:12px;"></div>
+                <div class="rounded-circle bg-danger" style="width:12px;height:12px;"></div>&nnsp;
+                <div class="rounded-circle bg-warning" style="width:12px;height:12px;"></div>&nnsp;
                 <div class="rounded-circle bg-success" style="width:12px;height:12px;"></div>
             </div>
             <span class="ms-2 fw-mono text-muted">Import log</span>
         </div>
-        <div id="logBox" class="card-body p-3 font-mono" 
-             style="background:#0a0a0a; min-height:520px; overflow-y:auto; color:#7c9e7c;">
+        <div id="logBox" class="card-body p-3 font-mono" style="background:#0a0a0a; min-height:520px; overflow-y:auto; color:#7c9e7c;">
             <span style="color:#2a3a2a">// Click "Run Import" to begin…</span>
         </div>
     </div>
 
-    <!-- Final Summary -->
-    <div id="summaryBox" class="card bg-black border-success" style="display:none;">
-        <div class="card-header text-success fw-bold">Import Complete</div>
-        <div class="card-body">
-            <div class="row g-3 text-center">
-                <div class="col-md-2 col-6"><strong class="text-success" id="sumImported">0</strong><br><small>Imported</small></div>
-                <div class="col-md-2 col-6"><strong class="text-warning" id="sumDuplicate">0</strong><br><small>Duplicate</small></div>
-                <div class="col-md-2 col-6"><strong class="text-info" id="sumLanguage">0</strong><br><small>Language</small></div>
-                <div class="col-md-2 col-6"><strong class="text-primary" id="sumGenre">0</strong><br><small>Genre</small></div>
-                <div class="col-md-2 col-6"><strong class="text-purple" id="sumAuthor">0</strong><br><small>Author</small></div>
-                <div class="col-md-2 col-6"><strong class="text-secondary" id="sumEncoding">0</strong><br><small>Encoding</small></div>
-            </div>
-        </div>
-    </div>
 
 </div>
 
