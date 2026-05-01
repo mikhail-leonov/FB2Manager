@@ -4,12 +4,12 @@ setlocal enabledelayedexpansion
 set OUTPUT=1
 if exist %OUTPUT% del %OUTPUT%
 
-call :processDir app
-call :processDir core
+REM call :processDir app
+REM call :processDir core
 call :processDir views
-call :processDir sql
+REM call :processDir sql
 call :processDir css
-REM call :processDir js
+call :processDir js
 
 echo Done
 exit /b

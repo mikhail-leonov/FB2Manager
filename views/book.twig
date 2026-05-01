@@ -19,11 +19,7 @@
       <div class="dot dot-y"></div>
       <div class="dot dot-g"></div>
       <span class="terminal-title">Read {{ title }}</span>
-
-      <div class="text-end mb-3">
-        <a href="#" class="like-btn" data-book-id="{{ book_id }}"  data-liked="{{ book.Liked ? 'true' : 'false' }}">{% if book.Liked %}★{% else %}☆{% endif %}</a>
-      </div>
-
+      {% include "partials/like.twig" %}
     </div>
 
     <div id="logBox">
