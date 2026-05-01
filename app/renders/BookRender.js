@@ -1,4 +1,12 @@
+// =============================
+// Constants
+// =============================
+
 const { render } = require("../../core/view");
+
+// =============================
+// Renderer
+// =============================
 
 async function renderBookPage(res, book) {
 

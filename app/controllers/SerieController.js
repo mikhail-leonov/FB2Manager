@@ -1,10 +1,17 @@
+// =============================
+// Constants
+// =============================
+
 const SerieModel = require("../models/SerieModel");
 const BookSerieModel = require("../models/BookSerieModel");
 const BookModel = require("../models/BookModel");
-
 const { respond, error } = require("../services/Response");
 const { SERIE_COLUMNS } = require("../services/tableColumns");
 const {BOOKS_PER_PAGE} = require("../../core/constants");
+
+// =============================
+// Controller
+// =============================
 
 class SerieController {
 

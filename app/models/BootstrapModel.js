@@ -1,3 +1,7 @@
+// =============================
+// Constants
+// =============================
+
 const db = require("../../core/db");
 const { ALL_TABLES } = require("../../core/constants");
 

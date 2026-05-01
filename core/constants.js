@@ -8,7 +8,7 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 
 const BOOKS_PER_PAGE = 50;
-const IMPORT_TIMEOUT_MS = 4 * 3600000; 
+const IMPORT_TIMEOUT_MS = 24 * 3600000; 
 
 
 // DIRECTORIES

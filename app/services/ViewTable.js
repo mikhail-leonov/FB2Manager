@@ -1,3 +1,12 @@
+// =============================
+// Constants
+// =============================
+
+
+// =============================
+// Service
+// =============================
+
 function renderTable(rows, hiddenColumns = [], url = null) {
 
     if (!rows || rows.length === 0) { return "<p>No data</p>"; }

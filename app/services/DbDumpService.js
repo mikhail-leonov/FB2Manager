@@ -1,7 +1,13 @@
-const db = require("../../core/db");
+// =============================
+// Constants
+// =============================
 
+const db = require("../../core/db");
 const { ALL_TABLES } = require("../../core/constants");
 
+// =============================
+// Service
+// =============================
 
 function dumpDb() {
     const result = {};

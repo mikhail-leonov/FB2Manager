@@ -1,4 +1,9 @@
+// =============================
+// Constants
+// =============================
+
 const db = require("../../core/db");
+const { BOOKS_PER_PAGE } = require("../../core/constants");
 const { pagedQuery } = require("../../core/dbpagination");
 
 // ======================
@@ -14,7 +19,7 @@ const unlinkStmt = db.prepare(`DELETE FROM BookSeries WHERE book_id = ? AND seri
 
 class BookSerieModel {
 
-    static getBooks(serie_id, bookModel, page = 1, limit = 20) {
+    static getBooks(serie_id, bookModel, page = 1, limit = BOOKS_PER_PAGE) {
         const result = pagedQuery({ table: "BookSeries", select: "book_id", where: "serie_id = ?", params: [serie_id], page, limit, orderBy: "rowid DESC" });
         const ids = result.data.map(r => r.book_id);
         return { data: bookModel.getByIds(ids), pagination: result.pagination };

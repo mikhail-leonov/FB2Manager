@@ -1,7 +1,15 @@
+// =============================
+// Constants
+// =============================
+
 const db = require("../../core/db");
 const crypto = require("crypto");
 const { pagedQuery } = require("../../core/dbpagination");
 const {BOOKS_PER_PAGE} = require("../../core/constants");
+
+// ======================
+// MODEL
+// ======================
 
 class DebugModel {
     static getAll(req) {

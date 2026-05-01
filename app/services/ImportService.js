@@ -1,3 +1,7 @@
+// =============================
+// Constants
+// =============================
+
 const fs = require("fs");
 const crypto = require("crypto");
 const path = require("path");
@@ -47,19 +51,9 @@ const parser = new XMLParser({
     trimValues: true
 });
 
-// Skip codes:
-// 0 = no skip (success)
-// 1 = duplicate book
-// 2 = language not allowed
-// 3 = language blocked
-// 4 = encoding not allowed
-// 5 = encoding blocked
-// 6 = genre blocked
-// 7 = genre not allowed
-// 8 = author blocked
-// 9 = XML parse failed
-// 10 = file read error
-// 11 = other error
+// =============================
+// Service
+// =============================
 
 function hashFile(buffer) {
     const hash = crypto.createHash("sha256").update(buffer).digest("hex");
@@ -277,6 +271,7 @@ async function processBook(file, index, total, existing, encodingStats, language
 
         Log(`Encoding: ${parsed.encoding}`);
         Log(`Language: ${book.language || 'unknown'}`);
+        Log(`Title: ${book.title || 'unknown'}`);
 
         encodingStats.add(parsed.encoding);
         languageStats.add(parsed.book.language);
@@ -293,12 +288,7 @@ async function processBook(file, index, total, existing, encodingStats, language
             return { totalSize: totalSize + fileSize };
         }
 
-        const skipCode = getSkipCode({
-            authors: parsed.authors,
-            language: book.language,
-            genres: parsed.genres,
-            encoding: parsed.encoding
-        });
+        const skipCode = getSkipCode({ authors: parsed.authors, language: book.language, genres: parsed.genres, encoding: parsed.encoding });
 
         if (parsed.authors.length > 0) {
             for (const a of parsed.authors) {
@@ -330,7 +320,7 @@ async function processBook(file, index, total, existing, encodingStats, language
             Log(`Skip Reason: ${getSkipMessage(skipCode)}`);
             Log(`Time: ${Date.now() - bookStart}ms`);
             Log("\n");
-            fs.unlinkSync(file);
+
             return { totalSize: totalSize + fileSize };
         }
 

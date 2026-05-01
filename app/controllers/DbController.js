@@ -1,7 +1,15 @@
+// =============================
+// Constants
+// =============================
+
 const { render } = require("../../core/view");
 const { dumpDb, dumpTable, stats, schema, cleanDb } = require("../services/DbDumpService");
 const { renderTable, renderJson } = require("../services/ViewTable");
 const { respond, error } = require("../services/Response");
+
+// =============================
+// Controller
+// =============================
 
 class DbController {
 

@@ -1,9 +1,14 @@
+// =============================
+// Constants
+// =============================
+
 const db = require("../../core/db");
 const { preprocess } = require("../services/TextPreprocessor");
 
-/**
- * Insert a book into DB + FTS index
- */
+// =============================
+// Service
+// =============================
+
 function insertBook(book) {
   const { title, annotation } = book;
 

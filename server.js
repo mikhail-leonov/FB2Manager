@@ -4,7 +4,7 @@ const { bootstrapDatabase } = require("./core/bootstrap");
 const { IMPORT_TIMEOUT_MS } = require("./core/constants");
 
 const PORT = 3000;
-const VERSION = "0.1.31";
+const VERSION = "0.1.33";
 
 bootstrapDatabase();
 

@@ -1,8 +1,15 @@
+// =============================
+// Constants
+// =============================
+
 const fs = require("fs");
 const path = require("path");
 const unzipper = require("unzipper");
-
 const { FB2_EXTENSION, ZIP_EXTENSION, UPLOAD_DIR } = require("../../core/constants");
+
+// =============================
+// Service
+// =============================
 
 function isFb2(filePath) {
     return path.extname(filePath).toLowerCase() === FB2_EXTENSION;

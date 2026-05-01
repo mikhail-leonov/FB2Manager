@@ -1,3 +1,7 @@
+// =============================
+// Constants
+// =============================
+
 const db = require("../../core/db");
 const crypto = require("crypto");
 const { pagedQuery } = require("../../core/dbpagination");

@@ -1,7 +1,15 @@
+// =============================
+// Constants
+// =============================
+
 const { render } = require("../../core/view");
 const { importBooks } = require("../services/ImportService");
 const { respond, error } = require("../services/Response");
 const { CONTENT_TYPE_HTML } = require("../../core/constants");
+
+// =============================
+// Controller
+// =============================
 
 class ImportController {
 
