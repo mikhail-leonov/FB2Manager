@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const db = require("./db");
+const { backupDatabase, getBackupInfo } = require("./dbbackup");
 
 const BootstrapModel = require("../app/models/BootstrapModel");
 
@@ -65,7 +66,6 @@ function backupLogFile() {
 function bootstrapDatabase() {
     ensureFolders();
 
-
     if (fs.existsSync(LOG_FILE)) {
         backupLogFile();
 
@@ -95,6 +95,17 @@ function bootstrapDatabase() {
         console.log(`Adding ${n} genre(s)...`);
         db.exec(fs.readFileSync(GENRES_SEED_FILE, "utf-8"));
     }
+
+
+    console.log("Creating database backup on startup...");
+    const backupSuccess = backupDatabase();
+    if (backupSuccess) {
+        const backupInfo = getBackupInfo();
+        console.log(`Backup created: ${backupInfo.size} bytes at ${backupInfo.modified}`);
+    } else {
+        console.warn("Warning: Database backup failed on startup");
+    }
+
 }
 
 module.exports = { bootstrapDatabase };

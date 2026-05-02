@@ -38,7 +38,7 @@ const {
 } = require("../../core/constants");
 
 // Configuration for batch processing
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 50;
 const PROGRESS_INTERVAL = 5;
 
 const parser = new XMLParser({
