@@ -243,5 +243,8 @@ module.exports = {
     IMPORT_BLOCKED_LANGUAGES,
     IMPORT_BLOCKED_AUTHORS,
     IMPORT_ALLOWED_GENRES,
-    IMPORT_BLOCKED_GENRES
+    IMPORT_BLOCKED_GENRES,
+
+    setGlobalSendFn: (fn) => { global.sseLogSend = fn; },
+    clearGlobalSendFn: () => { global.sseLogSend = null; }
 };

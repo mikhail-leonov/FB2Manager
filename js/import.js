@@ -14,9 +14,9 @@
   let imported = 0;
 
   function setStatus(s, label) {
-    const b = document.getElementById('statusBadge');
-    b.className = s;
-    b.textContent = label;
+//    const b = document.getElementById('statusBadge');
+//    b.className = s;
+//    b.textContent = label;
   }
 
   function updateSkipDisplay(category, value) {
@@ -33,45 +33,53 @@
     document.getElementById('cntProcessed').textContent = processed;
     if (total && total > 0) {
       const pct = Math.min(100, Math.round((processed / total) * 100));
-      document.getElementById('progressFill').style.width = pct + '%';
-      document.getElementById('progressPct').textContent = pct + '%';
-      document.getElementById('progressText').textContent = `Processing ${processed} / ${total}`;
+//      document.getElementById('progressFill').style.width = pct + '%';
+//      document.getElementById('progressPct').textContent = pct + '%';
+//      document.getElementById('progressText').textContent = `Processing ${processed} / ${total}`;
     }
   }
 
-  function appendLog(line) {
+function appendLog(line) {
     const box = document.getElementById('logBox');
+    if (!box) return;
+
     const span = document.createElement('span');
     span.className = 'log-line';
 
-    // Apply colors based on content
+    // Your existing color logic...
     if (line.includes('BATCH') || line.includes('====')) {
-        span.style.color = '#00ff9d'; // Bright green for batch headers
+        span.style.color = '#00ff9d';
     } else if (line.includes('Skip Code: 0') || line.includes('IMPORTED')) {
-        span.style.color = '#00ff9d'; // Green for success
+        span.style.color = '#00ff9d';
     } else if (line.match(/Skip Code: [1-9]/) || line.includes('Skip Reason:')) {
-        span.style.color = '#ffd700'; // Yellow for skips
+        span.style.color = '#ffd700';
     } else if (line.includes('Error:') || line.includes('Failed')) {
-        span.style.color = '#ff4444'; // Red for errors
+        span.style.color = '#ff4444';
     } else if (line.includes('File:') || line.includes('Index:')) {
-        span.style.color = '#00bfff'; // Cyan for file info
+        span.style.color = '#00bfff';
     } else if (line.includes('Author:') || line.includes('Genre:') || line.includes('Serie:')) {
-        span.style.color = '#9d9dff'; // Purple for metadata
+        span.style.color = '#9d9dff';
     } else if (line.includes('Progress:') || line.includes('completed')) {
-        span.style.color = '#ff9d00'; // Orange for progress
+        span.style.color = '#ff9d00';
     } else if (line.startsWith('//')) {
-        span.style.color = '#2a3a2a'; // Dim for comments
+        span.style.color = '#2a3a2a';
     } else {
-        span.style.color = '#888'; // Default gray
+        span.style.color = '#888';
     }
 
     span.textContent = line + '\n';
     box.appendChild(span);
+
+    // Limit history
     while (box.children.length > 300) {
-      box.removeChild(box.firstChild);
+        box.removeChild(box.firstChild);
     }
-    box.scrollTop = box.scrollHeight;
-  }
+
+    // Force scroll to bottom
+    setTimeout(() => {
+        box.scrollTop = box.scrollHeight;
+    }, 10);
+}
 
   // Map skip codes to categories
   function getSkipCategory(code) {
@@ -139,9 +147,9 @@
     document.getElementById('skipGenre').textContent = '0';
     document.getElementById('skipAuthor').textContent = '0';
     document.getElementById('skipEncoding').textContent = '0';
-    document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('progressPct').textContent = '0%';
-    document.getElementById('progressText').textContent = 'Processing...';
+//    document.getElementById('progressFill').style.width = '0%';
+//    document.getElementById('progressPct').textContent = '0%';
+//    document.getElementById('progressText').textContent = 'Processing...';
   }
 
   async function startImport() {
@@ -165,7 +173,7 @@
     document.getElementById('btnLabel').textContent = 'Running…';
 
     document.getElementById('logBox').innerHTML = '<span style="color:#2a3a2a">// Import started...\n</span>';
-    document.getElementById('progressWrap').classList.add('visible');
+//    document.getElementById('progressWrap').classList.add('visible');
     
     resetStats();
     
@@ -210,16 +218,9 @@
         }
       }
 
-      // Update final summary
-      document.getElementById('sumImported').textContent = imported;
-      document.getElementById('sumDuplicate').textContent = skipCounts.duplicate;
-      document.getElementById('sumLanguage').textContent = skipCounts.language;
-      document.getElementById('sumGenre').textContent = skipCounts.genre;
-      document.getElementById('sumAuthor').textContent = skipCounts.author;
-      document.getElementById('sumEncoding').textContent = skipCounts.encoding;
-      document.getElementById('summaryBox').classList.add('visible');
-      document.getElementById('progressFill').style.width = '100%';
-      document.getElementById('progressPct').textContent = '100%';
+//      document.getElementById('summaryBox').classList.add('visible');
+//      document.getElementById('progressFill').style.width = '100%';
+//      document.getElementById('progressPct').textContent = '100%';
       
       setStatus('done', 'done');
 
@@ -238,7 +239,6 @@
       }
       currentReader = null;
       btn.disabled = false;
-      document.getElementById('spinner').style.display = 'none';
       document.getElementById('btnLabel').textContent = 'Run Import';
     }
   }

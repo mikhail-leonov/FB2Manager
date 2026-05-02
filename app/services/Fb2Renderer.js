@@ -9,6 +9,8 @@ const parser = new XMLParser({
     trimValues: true
 });
 
+const TEXT_COLOR_CLASS = "text-warning bg-dark";
+
 function escapeHtml(str) {
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -72,7 +74,7 @@ function nodesToHtml(node) {
         // =========================
         if (key === "section") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<section class="log-line resolution-skipped">${nodesToHtml(v)}</section>`).join("");
+            html += arr.map(v => `<section class="${TEXT_COLOR_CLASS}">${nodesToHtml(v)}</section>`).join("");
         }
 
         // =========================
@@ -80,7 +82,7 @@ function nodesToHtml(node) {
         // =========================
         else if (key === "title") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<h2 class="log-line resolution-skipped">${renderInline(v)}</h2>`).join("");
+            html += arr.map(v => `<h2 class="${TEXT_COLOR_CLASS}">${renderInline(v)}</h2>`).join("");
         }
 
         // =========================
@@ -88,7 +90,7 @@ function nodesToHtml(node) {
         // =========================
         else if (key === "subtitle") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<h3 class="log-line resolution-skipped">${renderInline(v)}</h3>`).join("");
+            html += arr.map(v => `<h3 class="${TEXT_COLOR_CLASS}">${renderInline(v)}</h3>`).join("");
         }
 
         // =========================
@@ -96,7 +98,7 @@ function nodesToHtml(node) {
         // =========================
         else if (key === "p") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<p class="log-line resolution-skipped">${renderInline(v)}</p>`).join("");
+            html += arr.map(v => `<p class="${TEXT_COLOR_CLASS}">${renderInline(v)}</p>`).join("");
         }
 
         // =========================
@@ -104,17 +106,17 @@ function nodesToHtml(node) {
         // =========================
         else if (key === "poem") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<div class="poem log-line resolution-skipped">${nodesToHtml(v)}</div>`).join("");
+            html += arr.map(v => `<div class="poem ${TEXT_COLOR_CLASS}">${nodesToHtml(v)}</div>`).join("");
         }
 
         else if (key === "stanza") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<div class="stanza log-line resolution-skipped">${nodesToHtml(v)}</div>`).join("");
+            html += arr.map(v => `<div class="stanza ${TEXT_COLOR_CLASS}">${nodesToHtml(v)}</div>`).join("");
         }
 
         else if (key === "v") {
             const arr = Array.isArray(value) ? value : [value];
-            html += arr.map(v => `<div class="verse log-line resolution-skipped">${renderInline(v)}</div>`).join("");
+            html += arr.map(v => `<div class="verse ${TEXT_COLOR_CLASS}">${renderInline(v)}</div>`).join("");
         }
 
         // =========================
@@ -150,7 +152,7 @@ function renderFb2ToHtml(buffer) {
     const json = parser.parse(xml);
 
     const body = json?.FictionBook?.body;
-    if (!body) return "<p class='log-line resolution-skipped'>No content found.</p>";
+    if (!body) return `<p class='${TEXT_COLOR_CLASS}'>No content found.</p>`;
 
     const bodies = Array.isArray(body) ? body : [body];
     return bodies.map(b => nodesToHtml(b)).join("\n");

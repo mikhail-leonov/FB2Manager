@@ -22,9 +22,9 @@ const BooksFTSModel = require("../models/BooksFTSModel");
 
 const { getAllFiles, removeEmptyDirs } = require("./FileScanner");
 
-const { LOG_FILE } = require("../../core/constants");
 const db = require("../../core/db");
 const { preprocess } = require("../services/TextPreprocessor");
+const Log = require("./Log");
 
 const {
     IMPORT_ALLOWED_LANGUAGES,
@@ -261,7 +261,7 @@ function flush() {
     return new Promise(resolve => setImmediate(resolve));
 }
 
-async function processBook(file, index, total, existing, encodingStats, languageStats, totalSize, Log, stats, importedBooks) {
+async function processBook(file, index, total, existing, encodingStats, languageStats, totalSize, stats, importedBooks) {
     const fileSize = fs.statSync(file).size;
     const sizeKB = fileSize / 1024;
     const sizeMB = sizeKB / 1024;
@@ -421,16 +421,10 @@ async function processBook(file, index, total, existing, encodingStats, language
     }
 }
 
-async function importBooks(onLog) {
+async function importBooks() {
     global.importInProgress = true;
     global.importStartTime = Date.now();
     global.importProgress = 0;
-
-    function Log(msg) {
-        fs.appendFileSync(LOG_FILE, msg + "\n");
-        console.log(msg);
-        if (onLog) onLog(msg);
-    }
 
     const files = await getAllFiles();
     let total = files.length;
@@ -496,11 +490,7 @@ async function importBooks(onLog) {
                 
                 global.importProgress = currentIndex;
                 
-                const result = await processBook(
-                    file, currentIndex, total, existing, 
-                    encodingStats, languageStats, totalSize, 
-                    Log, stats, importedBooks
-                );
+                const result = await processBook( file, currentIndex, total, existing, encodingStats, languageStats, totalSize, stats, importedBooks );
                 
                 totalSize = result.totalSize;
                 processedCount++;

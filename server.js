@@ -4,7 +4,7 @@ const { bootstrapDatabase } = require("./core/bootstrap");
 const { IMPORT_TIMEOUT_MS } = require("./core/constants");
 
 const PORT = 3000;
-const VERSION = "0.1.33";
+const VERSION = "0.1.34";
 
 bootstrapDatabase();
 
@@ -84,6 +84,5 @@ process.on('unhandledRejection', (reason, promise) => {
 
 server.listen(PORT, () => {
     console.log(`Server v${VERSION} running on http://localhost:${PORT}`);
-    console.log(`Timeouts configured: timeout=${server.timeout}ms, keepAlive=${server.keepAliveTimeout}ms`);
     console.log(`Max import duration: ${IMPORT_TIMEOUT_MS / 3600000} hour(s)`);
 });

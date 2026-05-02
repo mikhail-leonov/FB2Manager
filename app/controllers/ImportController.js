@@ -10,6 +10,7 @@ class ImportController {
         res.writeHead(200, { "Content-Type": CONTENT_TYPE_HTML });
         return res.end(html);
     }
+    
     static status(req, res) {
         res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
         res.end(JSON.stringify({
@@ -18,23 +19,35 @@ class ImportController {
             filesProcessed: global.importProgress || 0
         }));
     }
+    
     static async stream(req, res) {
         res.writeHead(200, {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
+            "X-Accel-Buffering": "no",
+            "Transfer-Encoding": "chunked"  // NEW
         });
 
         const send = (line) => {
             const clean = line.replace(/\n$/, "");
-            if (clean) res.write(`data: ${clean}\n\n`);
+            if (clean) {
+                res.write(`data: ${clean}\n\n`);
+                // NEW: Force flush
+                if (res.flush) res.flush();
+            }
         };
 
+        // NEW: Set global send function
+        global.sseLogSend = send;
+
         try {
-            await importBooks(send);
+            await importBooks(send);  // Keep existing parameter for backwards compatibility
         } catch (e) {
             send(`Error: ${e.message}`);
+        } finally {
+            // NEW: Clear global send function
+            global.sseLogSend = null;
         }
 
         res.write("data: [DONE]\n\n");

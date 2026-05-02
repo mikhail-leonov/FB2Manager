@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const unzipper = require("unzipper");
+const Log = require("./Log");
 
 const { FB2_EXTENSION, ZIP_EXTENSION, UPLOAD_DIR } = require("../../core/constants");
 
@@ -25,7 +26,7 @@ async function extractZip(filePath) {
             finalDir = `${extractDir}_${counter++}`;
         }
 
-        console.log(`Extracting zip: ${filePath} → ${finalDir}`);
+        Log(`Extracting zip: ${filePath} → ${finalDir}`);
         fs.mkdirSync(finalDir, { recursive: true });
 
         await fs.createReadStream(filePath)
@@ -35,11 +36,11 @@ async function extractZip(filePath) {
         // delete ONLY after successful extraction
         fs.unlinkSync(filePath);
 
-        console.log(`Extracted zip and deleted: ${filePath}`);
+        Log(`Extracted zip and deleted: ${filePath}`);
         return finalDir;
 
     } catch (err) {
-        console.error(`Error extracting zip ${filePath}:`, err.message);
+        Log(`Error extracting zip ${filePath}: ${err.message}`);
 
         // do NOT delete zip if extraction failed
         return null;
@@ -71,9 +72,9 @@ async function getAllFiles(dir = UPLOAD_DIR, fileList = []) {
         } else {
             try {
                 fs.unlinkSync(fullPath);
-                console.log(`Deleted non-fb2 file: ${fullPath}`);
+                Log(`Deleted non-fb2 file: ${fullPath}`);
             } catch (err) {
-                console.error(`Error deleting file ${fullPath}:`, err.message);
+                Log(`Error deleting file ${fullPath}: ${err.message}`);
             }
         }
     }
