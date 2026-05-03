@@ -46,7 +46,7 @@ class ImportController {
         // send first message so frontend connects instantly
         send("// Stream connected");
 
-        const heartbeat = setInterval(() => { try { res.write(`data: [PING]\n\n`); } catch (e) { clearInterval(heartbeat); } }, 15000);
+        const heartbeat = setInterval(() => { try { res.write(`data: [PING]\n\n`); } catch (e) { clearInterval(heartbeat); } }, 450000);
 
         req.on('close', () => {
             clearInterval(heartbeat);

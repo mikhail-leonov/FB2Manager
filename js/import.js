@@ -255,6 +255,11 @@ async function startImport() {
       reconnect();
     }
 
+    if (delta > 360000) {
+      appendLog('[error] No data for 6 minutes — still retrying...');
+      reconnect();
+    }
+
   }, 10000);
 
   try {
