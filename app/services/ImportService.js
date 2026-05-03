@@ -427,6 +427,7 @@ async function importBooks() {
     global.importProgress = 0;
 
     const files = await getAllFiles();
+    await flush();
     let total = files.length;
 
     if (total === 0) {
@@ -495,6 +496,11 @@ async function importBooks() {
                 totalSize = result.totalSize;
                 processedCount++;
                 global.importProgress = processedCount;
+
+                if (i % 5 === 0) {
+                    await new Promise(r => setImmediate(r));
+                }
+
                 await flush();
             }
             

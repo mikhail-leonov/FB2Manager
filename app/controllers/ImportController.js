@@ -1,7 +1,7 @@
 const { render } = require("../../core/view");
 const { importBooks } = require("../services/ImportService");
 const { respond, error } = require("../services/Response");
-const { CONTENT_TYPE_HTML } = require("../../core/constants");
+const { CONTENT_TYPE_HTML, CONTENT_TYPE_JSON } = require("../../core/constants");
 
 class ImportController {
 
@@ -26,27 +26,40 @@ class ImportController {
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
-            "Transfer-Encoding": "chunked"  // NEW
+            "Transfer-Encoding": "chunked"
         });
+
+        // IMPORTANT: force headers out immediately
+        if (res.flushHeaders) res.flushHeaders();
 
         const send = (line) => {
             const clean = line.replace(/\n$/, "");
             if (clean) {
                 res.write(`data: ${clean}\n\n`);
-                // NEW: Force flush
                 if (res.flush) res.flush();
             }
         };
 
-        // NEW: Set global send function
+        // expose globally (your existing logic)
         global.sseLogSend = send;
 
+        // send first message so frontend connects instantly
+        send("// Stream connected");
+
+        const heartbeat = setInterval(() => { try { res.write(`data: [PING]\n\n`); } catch (e) { clearInterval(heartbeat); } }, 15000);
+
+        req.on('close', () => {
+            clearInterval(heartbeat);
+            global.sseLogSend = null;
+            try { res.end(); } catch {}
+        });
+
         try {
-            await importBooks(send);  // Keep existing parameter for backwards compatibility
+            await importBooks(send);
         } catch (e) {
             send(`Error: ${e.message}`);
         } finally {
-            // NEW: Clear global send function
+            clearInterval(heartbeat); 
             global.sseLogSend = null;
         }
 

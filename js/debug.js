@@ -7,7 +7,7 @@
       logBox.appendChild(div);
     } else {
       const span = document.createElement('span');
-      span.className = 'log-line';
+      span.className = '';
       span.innerHTML = content;
       logBox.appendChild(span);
       logBox.appendChild(document.createElement('br'));
@@ -21,7 +21,7 @@
   
   function formatTableData(data, tableName) {
     if (!Array.isArray(data) || data.length === 0) {
-      return '<div class="log-line">[info] No data found in ' + tableName + '</div>';
+      return '<div class="">[info] No data found in ' + tableName + '</div>';
     }
     
     let html = '<div style="overflow-x: auto;">';
@@ -40,7 +40,7 @@
       html += '<tr>';
       keys.forEach(key => {
         let val = row[key];
-        if (val === null) val = '<em style="color:#666;">null</em>';
+        if (val === null) val = '<em style="">null</em>';
         else if (typeof val === 'object') val = JSON.stringify(val);
         else val = escapeHtml(String(val));
         html += `<td>${val}</td>`;
@@ -49,7 +49,7 @@
     });
     
     html += '</tbody></div>';
-    html += `<div class="log-line">[ok] ${data.length} row(s) returned</div>`;
+    html += `<div class="">[ok] ${data.length} row(s) returned</div>`;
     return html;
   }
   
