@@ -104,10 +104,11 @@ if %ERRORLEVEL% EQU 0 (
 echo [+] Creating .gitignore...
 (
     echo backup/
-    echo upload/
+    echo books/
     echo files/
     echo logs/
-    echo books/
+    echo db/
+    echo upload/
     echo node_modules/
     echo package-lock.json
     echo package.json
