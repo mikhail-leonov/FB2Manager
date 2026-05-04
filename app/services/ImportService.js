@@ -477,6 +477,9 @@ async function importBooks() {
         Log(`Processing files ${batchStart + 1} to ${batchEnd} of ${total}\n`);
         
         // Start transaction for the batch
+        if (db.inTransaction) {
+            db.prepare('COMMIT').run();
+        } 
         db.prepare('BEGIN TRANSACTION').run();
         
         try {
@@ -512,6 +515,10 @@ async function importBooks() {
             Log(`\nBatch transaction failed, rolled back: ${error.message}`);
             throw error;
         }
+
+        if (db.inTransaction) {
+            db.prepare('COMMIT').run();
+        } 
         
         const batchTime = Date.now() - totalStart;
         Log(`\nBatch completed in ${(batchTime / 1000).toFixed(2)}s`);
