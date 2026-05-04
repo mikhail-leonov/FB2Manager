@@ -7,6 +7,8 @@ const BootstrapModel = require("../app/models/BootstrapModel");
 
 const {
     SQL_DIR,
+    UPGRADE_FILE,
+    SCHEMA_VERSION_FILE,
     DB_DIR,
     BACKUP_DIR,
     FILES_DIR,
@@ -96,6 +98,16 @@ function bootstrapDatabase() {
         db.exec(fs.readFileSync(GENRES_SEED_FILE, "utf-8"));
     }
 
+    if (fs.existsSync(SCHEMA_VERSION_FILE)) {
+        const n = countInsertStatements(SCHEMA_VERSION_FILE);
+        console.log(`Schema version ${n} records...`);
+        db.exec(fs.readFileSync(SCHEMA_VERSION_FILE, "utf-8"));
+    }
+
+    if (fs.existsSync(UPGRADE_FILE)) {
+        console.log(`Upgrading DB...`);
+        db.exec(fs.readFileSync(UPGRADE_FILE, "utf-8"));
+    }
 
     console.log("Creating database backup on startup...");
     const backupSuccess = backupDatabase();

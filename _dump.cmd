@@ -4,9 +4,9 @@ setlocal enabledelayedexpansion
 set OUTPUT=1
 if exist %OUTPUT% del %OUTPUT%
 
-REM call :processDir sql
-call :processDir app
-call :processDir core
+call :processDir sql
+REM call :processDir app
+REM call :processDir core
 REM call :processDir views
 REM call :processDir css
 REM call :processDir js

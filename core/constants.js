@@ -29,6 +29,7 @@ const SCHEMA_FILE        = path.join(SQL_DIR, "db.sql");
 const GENRES_SEED_FILE   = path.join(SQL_DIR, "genres.sql");
 const BOOKS_SEED_FILE    = path.join(SQL_DIR, "books.sql");
 const AUTHORS_SEED_FILE  = path.join(SQL_DIR, "authors.sql");
+const UPGRADE_FILE       = path.join(SQL_DIR, "upgrade.sql");
 const LOG_FILE           = path.join(LOG_DIR, "logs.log");
 
 const ENCODING_MAP = {
@@ -211,6 +212,7 @@ module.exports = {
     GENRES_SEED_FILE,
     BOOKS_SEED_FILE,
     AUTHORS_SEED_FILE,
+    UPGRADE_FILE,
     LOG_FILE,
 
     CONTENT_TYPE_JSON, 

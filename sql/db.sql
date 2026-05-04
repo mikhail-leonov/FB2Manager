@@ -7,13 +7,19 @@ PRAGMA foreign_keys = ON;
 -- TABLES
 -- =========================
 
+CREATE TABLE schema_version (
+    version INT NOT NULL
+);
+INSERT INTO schema_version (version) VALUES (1);
+
 CREATE TABLE IF NOT EXISTS Books (
     book_id VARCHAR(32) PRIMARY KEY,
     title TEXT NOT NULL,
     language VARCHAR(64),
     annotation TEXT,
     publication_date TEXT,
-    hash TEXT UNIQUE
+    hash TEXT UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS Authors (
