@@ -326,7 +326,6 @@ async function processBook(file, index, total, existing, encodingStats, language
             Log(`Skip Reason: ${getSkipMessage(skipCode)}`);
             Log(`Time: ${Date.now() - bookStart}ms`);
             Log("\n");
-            fs.unlinkSync(file);
             return { totalSize: totalSize + fileSize };
         }
 
